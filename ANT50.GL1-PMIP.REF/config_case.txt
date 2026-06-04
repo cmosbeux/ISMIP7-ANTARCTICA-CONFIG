@@ -1,0 +1,37 @@
+CONFIG=ANT50.GL1
+CASE=<SSPXXX>_<GCM>_<RCM>_<EXPXXX>
+
+#Forcing parameterization
+#-------------------------------
+GCM=<GCM>
+RCM=<RCM>
+SSPXXX=<SSPXXX>
+EXPXXX=<EXPXXX>
+
+# Period for ocean forcing
+#-------------------------------
+OINITIAL_DATE=185001
+OFINAL_DATE=230012
+
+# Period for atmospheric forcing
+#-------------------------------
+AINITIAL_DATE=1980
+AFINAL_DATE=<FINAL_DATE>
+
+
+# Friction parameterization
+#-------------------------------
+# 	1) weermtan1
+#	2) weertman3
+#	3) coulomb_reg
+FRICTION_LAW=<FRICTION_LAW>
+BETA_COEFF=<BETA_COEFF>
+
+# Ocean Param (PICO)
+#-------------------------------
+OVERTURNING_VALUE=2e6
+HEAT_FLUX_VALUE=5.5e-5
+
+#Initial State File
+#------------------
+NITIAL_STATE=<INITIAL_STATE_FILE>

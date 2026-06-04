@@ -1,0 +1,178 @@
+<?xml version="1.0"?>
+<!-- Context elmerice -->
+   <context id="elmerice">
+
+    <calendar type="NoLeap" start_date="2015-01-01 00:00:00" time_origin="2013-01-01 00:00:00" />
+
+<!-- ============== FIELD DEFINITION =========================== -->
+    <field_definition enabled=".TRUE." >
+
+      <!-- ismip6 variables  -->
+      <field_group id="ismip6" >
+	      <field_group id="ismip6_2D_state"  operation="instant">
+		      <field id="ismip6_xvelmean"   name="xvelmean"   field_ref="ssavelocity 1" unit="m s-1" > this/(86400.0*365.0) </field> 
+		      <field id="ismip6_yvelmean"   name="yvelmean"   field_ref="ssavelocity 2" unit="m s-1" > this/(86400.0*365.0) </field>
+		      <field id="ismip6_lithk"      name="lithk"      field_ref="h_elem"  > this*sftgif </field>
+		      <field id="ismip6_orog"       name="orog"       field_ref="zs_elem" > this*sftgif </field>
+		      <field id="ismip6_base"       name="base"       field_ref="zb_elem" > this*sftgif </field>
+		      <field id="ismip6_strbasemag" name="strbasemag" field_ref="strbasemag"  unit="Pa"> this*sftgif*1.0e6 </field>
+		      <field id="ismip6_topg"       name="topg"       field_ref="bedrock_elem" />
+		      <field id="ismip6_sftgif"     name="sftgif"     field_ref="sftgif"       />
+                      <field id="ismip6_sftgrf"     name="sftgrf"     field_ref="sftgrf"       />
+                      <field id="ismip6_sftflf"     name="sftflf"     field_ref="sftflf"       />
+	      </field_group>
+
+              <field_group id="ismip6_2D_flux" grid_ref="GridCells">
+	              <field id="ismip6_acabf"       name="acabf"       field_ref="acabf"           unit="kg m-2 s-1" operation="average" > this*sftgif*917.0/(86400.0*365.0) </field>
+                      <field id="ismip6_libmassbfgr" name="libmassbfgr" long_name="Basal mass balance flux (only beneath grounded ice)" field_ref="libmassbf"       unit="kg m-2 s-1" operation="average" > libmassbf*sftgrf*917.0/(86400.0*365.0) </field>
+	              <field id="ismip6_libmassbffl" name="libmassbffl" long_name="Basal mass balance flux (only beneath floating ice)" field_ref="libmassbf"       unit="kg m-2 s-1" operation="average" > libmassbf*sftflf*917.0/(86400.0*365.0) </field>
+		      <field id="ismip6_dlithkdt"    name="dlithkdt"    field_ref="h velocity_elem" unit="m s-1"      operation="average" > this*sftgif/(86400.0*365.0) </field>
+		      <field id="ismip6_ligroundf"   name="ligroundf"   field_ref="ligroundf"       unit="kg m-2 s-1" operation="average" > this*sftgif*917.0/(86400.0*365.0)</field>
+
+		      <!-- ice_flux is positive if outward, so as it is mass loss it should be reversed sign...  -->
+		      <!-- and we don't make the distuinction between calving and front melt...  -->
+		      <field id="ismip6_lifmassbf" name="lifmassbf" unit="kg m-2 s-1" field_ref="calving_front_flux" operation="average" > -this*sftgif*917.0/(86400.0*365.0) </field>
+	      </field_group>
+
+	      <field_group id="ismip6_1D" grid_ref="ScalarGrid_sum">
+		      <field id="ismip6_lim"             name="lim"             standard_name="land_ice_mass" unit="kg" field_ref="ismip6_lithk"  > this*cell_area*917.0 </field>
+		      <field id="ismip6_limnsw"          name="limnsw"          standard_name="land_ice_mass_not_displacing_sea_water" unit="kg" field_ref="haf_elem"      > this*cell_area*917.0 </field>
+                      <field id="ismip6_iareagr"         name="iareagr"         standard_name="grounded_ice_sheet_area" unit="m2" field_ref="ismip6_sftgrf" > this*cell_area </field>
+                      <field id="ismip6_iareafl"         name="iareafl"         standard_name="floating_ice_shelf_area" unit="m2" field_ref="ismip6_sftflf" > this*cell_area </field>
+                      <field id="ismip6_tendacabf"       name="tendacabf"       standard_name="tendency_of_land_ice_mass_due_to_surface_mass_balance" unit="kg s-1" field_ref="ismip6_acabf" > this*cell_area </field>
+                      <field id="ismip6_tendlibmassbf"   name="tendlibmassbf"   standard_name="tendency_of_land_ice_mass_due_to_basal_mass_balance" unit="kg s-1" field_ref="ismip6_libmassbffl" > this*cell_area </field>
+		      <field id="ismip6_tendlibmassbffl" name="tendlibmassbffl" standard_name="tendency_of_land_ice_mass_due_to_basal_mass_balance" unit="kg s-1" field_ref="ismip6_libmassbffl" > this*cell_area </field>
+		      <field id="ismip6_tendligroundf"   name="tendligroundf"   standard_name="tendency_of_grounded_ice_mass" unit="kg s-1" field_ref="ismip6_ligroundf" > this*cell_area </field>
+		      <field id="ismip6_tendlifmassbf"   name="tendlifmassbf"   standard_name="tendency_of_land_ice_mass_due_to_calving_and_ice_front_melting" unit="kg s-1" field_ref="ismip6_lifmassbf" > this*cell_area </field>
+	      </field_group>
+
+      <!-- end: ismip6 variables  -->
+      </field_group>
+
+      <field_group id="elmer" operation="instant" >
+
+	      <field_group id="elmer_topo" >
+		      <field id="h"       standard_name="land_ice_thickness" unit="m" grid_ref="GridNodes"  />
+		      <field id="h_elem"  standard_name="land_ice_thickness" unit="m"  grid_ref="GridCells" />
+
+		      <field id="h velocity"                      standard_name="tendency_of_land_ice_thickness" unit="m a-1" grid_ref="GridNodes" />
+		      <field id="h velocity_elem" name="dlithkdt" standard_name="tendency_of_land_ice_thickness" unit="m a-1" grid_ref="GridCells" />
+
+		      <field id="zs"      standard_name="surface_altitude"   unit="m"  grid_ref="GridNodes" />
+		      <field id="zs_elem" standard_name="surface_altitude"   unit="m"  grid_ref="GridCells" />
+
+		      <field id="zb"      standard_name="base_altitude"      unit="m"  grid_ref="GridNodes" />
+		      <field id="zb_elem" standard_name="base_altitude"      unit="m"  grid_ref="GridCells" />
+
+		      <field id="haf"      standard_name="heigh_above_flotation" unit="m"  grid_ref="GridNodes" />
+		      <field id="haf_elem" standard_name="heigh_above_flotation" unit="m"  grid_ref="GridCells" />
+
+		      <field id="bedrock"      standard_name="bedrock_altitude" unit="m"  grid_ref="GridNodes" operation="once" />
+		      <field id="bedrock_elem" standard_name="bedrock_altitude" unit="m" grid_ref="GridCells" operation="once" />
+	      </field_group>
+
+	      <field_group id="elmer_masks" >
+		      <field id="groundedmask" unit="1" grid_ref="GridNodes" />
+		      <field id="sftgif"     standard_name="land_ice_area_fraction"           unit="1" grid_ref="GridCells" />
+                      <field id="sftgrf"     standard_name="grounded_ice_sheet_area_fraction" unit="1" grid_ref="GridCells" />
+		      <field id="sftflf"     standard_name="floating_ice_shelf_area_fraction" unit="1" grid_ref="GridCells" />
+                      <field id="basins"     standard_name="ice_catchments_basins_mask"       unit="1" grid_ref="GridCells" />
+	      </field_group>
+
+               <field_group id="elmer_velocity">
+		      <field id="ssavelocity 1"   standard_name="land_ice_vertical_mean_x_velocity"             unit="m a-1" grid_ref="GridNodes" />
+		      <field id="ssavelocity 2"   standard_name="land_ice_vertical_mean_y_velocity"             unit="m a-1" grid_ref="GridNodes" />
+		      <field id="ligroundf"       standard_name="land_ice_specific_mass_flux_at_grounding_line" unit="m a-1" grid_ref="GridCells" />
+                      <field id="calving_front_flux" standard_name="land_ice_specific_mass_flux_due_to_calving_and_ice_front_melting" unit="m a-1" grid_ref="GridCells" />
+
+		      <field id="vx" field_ref="ssavelocity 1" />
+		      <field id="vy" field_ref="ssavelocity 2" />
+		      <field id="vnorm" unit="m a-1" grid_ref="GridNodes" > sqrt(vx^2+vy^2) </field>
+	      </field_group>
+
+
+	      <field_group id="elmer_friction" >
+		      <field id="strbasemag" standard_name="land_ice_basal_drag"     unit="MPa"       grid_ref="GridCells" />
+		      <field id="slc0" long_name="ssa_linear_friction_coefficent"    unit="MPa m-1 a" grid_ref="GridNodes" operation="once" />
+		      <field id="ceff" long_name="ssa_effective_friction_coefficent" unit="MPa m-1 a" grid_ref="GridNodes" />
+	      </field_group>
+
+              <field_group id="elmer_restart" >
+                      <field id="lonlat"   grid_ref="GridNodes" />
+                      <field id="lonlat 1" grid_ref="GridNodes" />
+                      <field id="lonlat 2" grid_ref="GridNodes" />
+                      <field id="beta"     grid_ref="GridNodes" />
+                      <field id="eta"      grid_ref="GridNodes" />
+	      </field_group>
+
+	      <field_group id="elmer_flowlaw" >
+		      <field id="mu" long_name="ssa_mean_viscosity" unit="MPa a1/3" grid_ref="GridNodes" operation="once" />
+	      </field_group>
+
+	      <field_group id="elmer_forcings" >
+                      <field id="melt" long_name="basal_mass_balance_reference"                         unit="m a-1"  grid_ref="GridCells" />
+                      <field id="smb"  long_name="surface_mass_balance_reference"                       unit="m a-1"  grid_ref="GridNodes" operation="once" />
+		      <field id="dsmb" long_name="surface_mass_balance_anomaly"                         unit="m a-1"  grid_ref="GridNodes" operation="once" />
+		      <field id="acabf"     standard_name="land_ice_surface_specific_mass_balance_flux" unit="m a-1"  grid_ref="GridCells" />
+		      <field id="libmassbf" standard_name="land_ice_basal_specific_mass_balance_flux"   unit="m a-1"  grid_ref="GridCells" />
+		      <field id="h loads"                                                               unit="m3 a-1" grid_ref="GridNodes" />
+	      </field_group>
+
+	      <field_group id="elmer_global" grid_ref="ScalarGrid_sum">
+		      <field id="time" name="elmer_time" unit="a" prec="8" />
+	      </field_group>
+
+      </field_group>
+
+    </field_definition>
+
+<!-- ============== FILE DEFINITION =========================== -->
+    <file_definition src="./file_def_elmer.xml"/>
+
+<!-- ============== DOMAIN DEFINITION =========================== -->
+    <domain_definition> 
+      <!-- mandatory domains ...  -->
+      <domain id="cells" name="mesh2D"/>
+      <domain id="edges" name="mesh2D"/>
+      <domain id="nodes" name="mesh2D"/>
+      <!-- ...  -->
+    </domain_definition>
+
+<!-- ============== GRID DEFINITION =========================== -->
+    <grid_definition>
+     
+      <!-- mandatory grids... -->
+      <grid id="GridCells">
+        <domain domain_ref="cells"/>
+      </grid>
+
+      <grid id="GridNodes">
+        <domain domain_ref="nodes"/>
+      </grid>
+
+      <grid id="GridEdges">
+        <domain domain_ref="edges"/>
+      </grid>
+      <!-- ...  -->
+
+      <grid id="ScalarGrid_sum">
+        <scalar id="scalar_sum" >
+              <reduce_domain operation="sum" />
+        </scalar>
+      </grid>
+
+      <grid id="ScalarGrid_min">
+        <scalar id="scalar_min" >
+              <reduce_domain operation="min" />
+        </scalar>
+      </grid>
+
+      <grid id="ScalarGrid_max">
+        <scalar id="scalar_max" >
+              <reduce_domain operation="max" />
+        </scalar>
+       </grid>
+
+    </grid_definition>
+
+  </context>

@@ -1,0 +1,44 @@
+! define some parameters for the test
+!## From year to seconds
+$yearinsec = 31556926.0
+
+$zsl=0.0
+
+
+!- MISMIP+ values :
+$rhofw_SI  = 1000.0             ! Fresh water density (kg/m^3)
+$cpw_SI    = 4218.0             ! Specific heat of sea water (J/kg/K)
+$grav_SI   =    9.81            ! Gravity (m/s^2)
+$rhoi_SI   =  917.0             ! Ice density (kg/m^3)
+$Lf_SI     =    3.35e5          ! Fusion Latent heat of Ice (J/kg)
+$rhosw_SI  = 1027.0             ! Sea water density (kg/m^3)
+$lambda1   =   -0.0573          ! Liquidus slope  (K/psu)
+$lambda2   =    0.0832          ! Liquidus intercept  (K)
+$lambda3   =   -7.53e-8 * grav_SI * rhosw_SI ! Liquidus pressure coefficient  (K/m)
+$n         = 3.0                ! Glen law exponent
+
+
+!- conversions to Elmer units:
+$rhofw   = rhofw_SI / (1.0e6*yearinsec^2)
+$cpw     = cpw_SI  * yearinsec^2
+$rhoi = rhoi_SI/(1.0e6*yearinsec^2)
+$Lf = Lf_SI * yearinsec^2
+$rhow = rhosw_SI/(1.0e6*yearinsec^2)
+$cw= cpw_SI*yearinsec^2.0
+$gravity = -grav_SI*yearinsec^2.0
+
+
+!- specific to melt parameterizations :
+$meltfac    = rhosw_SI * cpw_SI / ( rhoi_SI * Lf_SI )
+
+$Nbox_PICO       = 5                     ! nb of boxes in PICO
+$gammaT_PICO_SI  = 2.0e-5                 ! gamma_T_star in Reese et al. (m/s) in [5.e-6;1.e-4]
+$C_PICO_SI       = 1.0e6                   ! Circulation parameter C (Sv) in [0.1;9]
+$alpha_PICO      = 7.5e-5              ! Thermal expansion coefficient for linear EOS (K^-1)
+$beta_PICO       = 7.7e-4              ! Salinity contraction coefficient for linear EOS (psu^-1)
+$rhostar_SI_PICO = 1027.51               ! In situ density for linear EOS (kg/m3)
+
+
+$gammaT_PICO = gammaT_PICO_SI * yearinsec
+$C_PICO = C_PICO_SI * (1.0e6*yearinsec^2) * yearinsec
+$rhostar_PICO = rhostar_SI_PICO / (1.0e6*yearinsec^2)

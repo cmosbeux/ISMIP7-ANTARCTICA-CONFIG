@@ -1,0 +1,32 @@
+!###################### FILE ########################
+!
+! define simulation name
+$name="ANT50.GL1-ISMIP6"
+!
+! define data_dir
+$data_dir = "/ccc/work/cont003/gen6066/gen6066/ISMIP6/ISMIP6_ANT/"
+!
+!-----------------------------------------------------------
+! SMB files
+!-----------------------------------------------------------
+! define smb file
+$file_smb = "racmo_wessem_initmip8km_mean1995_2014_smbice.nc"
+$var_smb = "SMB"
+!
+!-----------------------------------------------------------
+! True cell area files
+!-----------------------------------------------------------
+$truecellarea = "true_cell_area.nc"
+!
+!-----------------------------------------------------------
+! PP files
+!-----------------------------------------------------------
+! define basin file
+$file_basins = "schmidtko_initmip8km_means.nc"
+!
+!-----------------------------------------------------------
+! RST files
+!-----------------------------------------------------------
+! define restart netcdf input
+$restart = "RST_simplified2/NEWMESH.result.nc"
+

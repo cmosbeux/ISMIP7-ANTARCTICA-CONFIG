@@ -1,0 +1,175 @@
+$Exp="AE03_024"
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+include elmer.param
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Header
+  Mesh DB "." "MSH_simplified2"
+End
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Constants
+   Sea Level = Real $zsl
+  Water Density = Real $rhow
+End
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Simulation
+
+!# Definition of the projection, see ProjUtils documentation
+ ! Antarctica EPSG:3031
+  projection type = String "polar stereographic south"
+  central_meridian = Real 0.0
+  latitude_of_origin = Real -71.0
+
+  Coordinate System  = Cartesian 2D
+
+  Simulation Type = Steady State
+
+  Steady State Max Iterations = 1
+  Steady State Min Iterations = 1
+
+  Post File = "Exclude_$Exp$.vtu"
+  Output Intervals = 1
+
+  max output level = 3
+End
+
+!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Body 1
+  Equation = 1
+  Initial Condition = 1
+  Body Force = 1
+  Material = 1
+End
+
+!#####
+Body Force 1
+  dumyArea Passive = Variable "h"
+     REAL procedure "passive_cond" "passive_cond"
+
+  H Lower Limit = Real $Hmin
+End
+!#####
+Material 1
+  SSA Mean Density = Real $rhoi
+End
+!#####
+!###################################################
+!### Read h
+!###################################################
+Solver 1
+  Equation = Eq1
+    Procedure = "ElmerIceSolvers" "UGridDataReader"
+
+    File Name = File "ISMIP6_W-exp$Exp$.restart.nc"
+
+    Time Index = Integer -1
+
+    !# Time variable inputs
+   !# geometry
+   Variable Name 1 = File "h"
+   Variable Name 2 = File "zs"
+   Variable Name 3 = File "zb"
+   Variable Name 4 = File "haf"
+   Variable Name 5 = File "groundedmask"
+
+   !# ssa velocity
+   Variable Name 6 = File "ssavelocity 1"
+   Variable Name 7 = File "ssavelocity 2"
+
+!# Constant inputs
+   !# Nodal inputs
+   Variable Name 8  = File "bedrock"
+   Variable Name 9  = File "mueta2"
+   Variable Name 10 = File "beta_1"
+
+!# Export Constant inputs to feed next restart
+   Exported Variable 1 = bedrock
+   Exported Variable 2 = mueta2
+   Exported Variable 3 = beta_1
+
+
+    Exported Variable 4 = "h"
+    Exported Variable 5 = -dofs 2 "ssavelocity"
+End
+
+!###################################################
+!### Detect connected areas
+!### from passive condition
+!###################################################
+Solver 2
+   Equation = "ConnectedArea"
+   Variable = -nooutput dumyArea
+     Procedure = "GetConnectedAreas" "GetConnectedAreas"
+!
+   Optimize Bandwidth = False
+!
+  Save regions labels = Logical True
+  File Name = File "regions_E_$Exp$.txt"
+
+   Exported Variable 1 = -elem RegionNumber
+   Exported Variable 2 = -elem RegionArea
+   Exported Variable 3 = -elem RegionNoE
+End
+
+Solver 3
+   Equation = "ExcludeAreas"
+   Variable = -nooutput dumyEArea
+     Procedure = "ExcludeAreas" "ExcludeAreas"
+
+   Critical Number of elements = Integer 5
+End
+
+Solver 4
+   Equation = "Flotation"
+   Procedure = "ElmerIceSolvers" "Flotation"
+
+   ! primary variable
+   Variable = GroundedMask
+
+   ! secondary variables (output): surface and base altitude
+   Exported Variable 1 = zs
+   Exported Variable 2 = zb
+   Exported Variable 3 = haf
+End
+
+Solver 5
+   Exec Solver = After All
+
+   Equation = "XIOSOutPutSolve"
+   Procedure = "ElmerIceSolvers" "XIOSOutputSolver"
+
+   time_units=String "1y"
+
+! 
+! ... to see we should have the same date as in the initial file
+   reference date=String "2015-01-01"
+
+! name format
+   file names suffix = File "_$Exp$"
+
+! node and elem vars
+   ! geometry
+   Scalar Field 1 = String "h"
+   Scalar Field 2 = String "zs"
+   Scalar Field 3 = String "zb"
+   Scalar Field 4 = String "haf"
+   Scalar Field 5 = String "groundedmask"
+   Scalar Field 6 = String "ssavelocity 1"
+   Scalar Field 7 = String "ssavelocity 2"
+   Scalar Field 8 = String "bedrock"
+   Scalar Field 9 = String "mueta2"
+   Scalar Field 10 = String "beta_1"
+
+
+End
+
+!#####
+Equation 1
+  Active Solvers(5)= 1 2 3 4 5
+End
+
+!#####
+Boundary Condition 1
+  Target Boundaries = 1
+End
+

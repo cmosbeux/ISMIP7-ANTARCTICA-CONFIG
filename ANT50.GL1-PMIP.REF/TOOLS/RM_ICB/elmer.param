@@ -1,0 +1,14 @@
+!----------------------------------------------------------------------
+!                         MODEL PARAMETERS
+!---------------------------------------------------------------------
+$Hmin      = 1.0                              ! H limiter threshold (m)
+
+$yearinsec = 31536000                         ! time with calendar 365j (s)
+
+$rhoi_SI   = 917.0                            ! Ice density (kg.m^-3)
+$rhoi      = rhoi_SI / (1.0e6 * yearinsec^2)  ! Ice density (MPa.m^-2.yr^2)
+
+$rhosw_SI  = 1028.0                           ! Sea water density (kg.m^-3)
+$rhow      = rhosw_SI / (1.0e6 * yearinsec^2) ! Sea water density (MPa.m^-2.yr^2)
+
+$zsl       = 0.0       

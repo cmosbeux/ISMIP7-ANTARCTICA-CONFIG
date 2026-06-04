@@ -1,0 +1,138 @@
+$name="asmb"
+$id="1"
+!#-----------------------------------------------------------------------
+Header
+  Mesh DB "." "MSH_simplified2"
+End
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Simulation
+
+!# Definition of the projection, see ProjUtils documentation
+! Antarctica EPSG:3031
+  projection type = String "polar stereographic south"
+  central_meridian = Real 0.0
+  latitude_of_origin = Real -71.0
+
+  Coordinate System  = Cartesian 2D
+
+  Simulation Type = Transient
+  Timestepping Method = "bdf"
+  BDF Order = 2
+  Timestep Intervals(1) = $ 365 * 20
+  Timestep Sizes(1) = $ 1.0 / 365.0
+
+  Steady State Max Iterations = 1
+  Steady State Min Iterations = 1
+
+! VTU management (TO BE REMOVED ONCE XIOS validated)
+  vtu: Vtu Time Collection = Logical True
+  Post File = "$name$_$id$.vtu"
+  OutPut Intervals(1) = 365
+
+  max output level = 5
+End
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Body 1
+  Equation = 1
+End
+
+
+!#-----------------------------------------------------------------------
+!#                          READ NETCDF UGRID
+!#-----------------------------------------------------------------------
+!# SOLVER to read variables from a netcdf file
+!#     - input  : * Unstrucred netcdf file
+!#                * Time Point 
+!#
+!#     - output : * 
+!#-----------------------------------------------------------------------
+
+Solver 1
+!!!  Exec this solver every 365 time-steps; i.e. every year...
+!!!  To change if time-step change
+   Exec Interval = 365
+
+   Exec Solver = Before Timestep
+
+   Equation = "UGridDataReader"
+  ! temporary a local version that can read a variable time-point; this will be updated in elmerice
+   Procedure = "MyUGridDataReader" "UGridDataReader"
+
+   File Name = File "CCSM4_ant50.gl1_anomaly_1995-2100.nc"
+
+ ! the time index to be read is 
+ !  floor(Time_Point - dt/2 ) + 1
+ ! will read index:
+ !  1+0 at timestep=1
+ !  1+1 at  timestep=366
+ !   etc....
+ ! To adjust to have to good starting point
+  Time Point = Variable Time
+    REAL MATC "10+tx"
+
+
+   Variable Name 1 = File "asmb"
+
+  Exported Variable 1 = -elem "asmb"
+
+End
+
+Solver 2
+  Exec Solver = After Timestep
+  Exec interval = 73
+  
+
+   Equation = "Save Scalars"
+   Procedure = File "SaveData" "SaveScalars"
+
+   Parallel Reduce = logical True
+
+   Filename = File "scalars_$name$_$id$.dat"
+
+   Variable 1 = "Time"
+
+   Variable 2 = "asmb"
+   Operator 2 = "int"
+End
+
+
+Solver 3
+   Exec Solver = After Timestep
+
+   Equation = "XIOSOutPutSolve"
+   Procedure = "ElmerIceSolvers" "XIOSOutputSolver"
+
+   time_units=String "1y"
+
+ ! time-step: optional the duration of the tile step; other time_step=time_units*dt
+   timestep=String "1d"
+ ! for consitency check we check that taking 1/dt time_step leads 
+ !  to the same duration than time_units with xx seconds
+   timestep tolerance = Real 1.0
+
+ ! to set the strat date from elmer; star date will be reference date + (Gettime()-dt)*time_units
+ ! i.e. for restart if time=10+dt => start_date=2025-01-01
+   reference date=String "2015-01-01"
+
+ ! name format
+   file names suffix = String "_$name$_$id$"
+
+! node and elem vars
+   Scalar Field 1 = String "asmb"
+
+  Global Variable 1 = String "time"
+
+End
+
+
+!#####
+Equation 1
+  Active Solvers (3)= 1 2 3
+End
+
+!#####
+Boundary Condition 1
+  Name = "Ice Front"
+  Target Boundaries = 1
+End
+
