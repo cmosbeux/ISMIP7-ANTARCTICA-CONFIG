@@ -1,0 +1,9 @@
+Elmer version: 9.0
+Elmer revision: bfd923fb
+Elmer compilation date: 2022-06-26
+Solver input file: read_asmb.sif
+File started at: 2022/07/12 16:05:06
+ 
+Variables in columns of matrix: ./scalars_asmb_1.dat
+   1: value: time scalar variable
+   2: int: asmb : mpi_sum

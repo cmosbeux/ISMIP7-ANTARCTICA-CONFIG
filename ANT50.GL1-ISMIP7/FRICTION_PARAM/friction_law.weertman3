@@ -1,0 +1,7 @@
+! Weertman
+    SSA Friction Law = string "Weertman"
+    SSA Friction Parameter = Equals beta_3
+    SSA Friction Exponent = Real $1.0/3.0
+
+    SSA Friction Linear Velocity = Real 0.00001
+

@@ -1,0 +1,79 @@
+Header
+  Mesh DB "./" "mesh_out"
+End
+
+
+Simulation
+  ! For interpolation it seems to be important to tell the dimension
+  Coordinate System = Cartesian 2D
+
+  Max Output Level = 32
+
+  Simulation Type = Steady
+  Steady State Max Iterations = 1
+
+  Output Intervals = 1
+  Post File = "elmer_rst_20401231.62.on_simplified3.vtu"
+  OutPut File = "elmer_rst_20401231.62.on_simplified3.result"
+
+  Restart Error Continue = Logical True  ! continues even if mismatch in number of partitions
+End
+
+Body 1
+  Name = "Body1"
+  Equation = 1
+End
+
+Equation 1
+  Name = "Equation1"
+  Active Solvers(2) = 1 2 
+End
+
+
+Solver 1
+  Equation = "UpdateExport"
+
+  Procedure = "ElmerIceSolvers" "UpdateExport"
+
+  Variable = -nooutput "dumy"
+
+  Exported Variable 1 = bedrock
+  Exported Variable 2 = H
+  Exported Variable 3 = beta_jh
+  Exported Variable 4 = eta
+  Exported Variable 5 = smb
+  Exported Variable 6 = mu
+  Exported Variable 7 = -dofs 2 SSAVelocity
+  Exported Variable 8 = groundedmask
+End
+
+
+Solver 2
+  Equation = "ISolver"
+
+! Perform the interpolation solver before all other solvers, only once.
+  Exec Solver = Before all
+  Procedure = "M2M" "Mesh2MeshSolver"
+
+! The leading variable + exported variables that follow that
+! The variables that we want to restart should be in this list,
+! or they can be allocated by some other solver associated to the "coarse" mesh.
+  Variable = -dofs 2 "SSAVelocity"
+
+  Variable 1 = bedrock
+  Variable 2 = H
+  Variable 3 = beta_jh
+  Variable 4 = eta
+  Variable 5 = smb
+  Variable 6 = mu
+  Variable 7 = SSAVelocity 1
+  Variable 8 = SSAVelocity 2
+  Variable 9 = groundedmask
+
+  Mesh = -part 48 "mesh_in"  ! in parallel when initial computation in several partitions
+
+  Restart File = File "elmer_rst_20401231.62.result"
+  Restart Error Continue = Logical True  ! continues even if mismatch in number of partitions
+
+End
+

@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+
+    <file_definition type="one_file" output_freq="1ts" >
+
+<!-- RESTART OUTPUT -->
+      <file id="file01" name="restart" convention="UGRID"  time_counter_name="time" time_counter="instant" time_units="days" >
+	      <field_group group_ref="mesh_info" />
+	      <field_group prec="8" >
+	          <field field_ref="h"             />
+                  <field field_ref="zs"            />    
+                  <field field_ref="zb"            /> 
+                  <field field_ref="bedrock"       />   <!-- ???????? -->
+                  <field field_ref="groundedmask"  />
+                  <field field_ref="beta"          />
+                  <field field_ref="eta"           />
+                  <field field_ref="mu"            />
+                  <field field_ref="lonlat"        />
+                  <field field_ref="lonlat 1"      />
+                  <field field_ref="lonlat 2"      />
+	      </field_group>
+              <variable id="elmerversion" name="model_version" type="string"> elmer ice v9.0</variable>
+      </file>
+
+    </file_definition>

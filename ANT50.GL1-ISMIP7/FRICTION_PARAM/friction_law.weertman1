@@ -1,0 +1,3 @@
+! Weertman 1
+    SSA Friction Law = String "linear"
+    SSA Friction Parameter = Equals beta_1
