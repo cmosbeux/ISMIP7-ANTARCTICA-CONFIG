@@ -1,39 +1,11 @@
 !/*****************************************************************************/
 ! *
-! *  Elmer/Ice, a glaciological add-on to Elmer
-! *  http://elmerice.elmerfem.org
-! *
-! *
-! *  This program is free software; you can redistribute it and/or
-! *  modify it under the terms of the GNU General Public License
-! *  as published by the Free Software Foundation; either version 2
-! *  of the License, or (at your option) any later version.
-! *
-! *  This program is distributed in the hope that it will be useful,
-! *  but WITHOUT ANY WARRANTY; without even the implied warranty of
-! *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-! *  GNU General Public License for more details.
-! *
-! *  You should have received a copy of the GNU General Public License
-! *  along with this program (in file fem/GPL-2); if not, write to the
-! *  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-! *  Boston, MA 02110-1301, USA.
+! *  CollapseAreas_Parallel: connected shelf regions + fracture ratio collapse
 ! *
 ! *****************************************************************************/
-! ******************************************************************************
-! *
-! *  Author: C. Mosbeux, F. Gillet-Chaulet (IGE)
-! *  Email:  fabien.gillet-chaulet@univ-grenoble-alpes.fr
-! *          cyrille.mosbeux@univ-grenoble-alpes.fr
-! *  Web:    http://elmerice.elmerfem.org
-! *
-! *  Original Date: 15/07/2026
-! *  
-! *  Find conneceted areas in a mesh
-! *****************************************************************************
-!!!  
-      SUBROUTINE GetConnectedAreas( Model,Solver,dt,TransientSimulation)
+      SUBROUTINE CollapseAreas_Parallel(Model,Solver,dt,TransientSimulation)
       USE DefUtils
+      USE ConnectedAreas
       IMPLICIT NONE
 
       TYPE(Model_t) :: Model
@@ -41,301 +13,319 @@
       REAL(KIND=dp) :: dt
       LOGICAL :: TransientSimulation
 
-      TYPE Queue_t
-         INTEGER :: maxsize
-         INTEGER :: top
-         INTEGER,ALLOCATABLE :: items(:)
-      END TYPE Queue_t
-
-      TYPE(Variable_t), POINTER :: Var,Area,NoE,FractureMaskVar,CollapseMaskVar
+      TYPE(Region_t), ALLOCATABLE :: RegionsStat(:), UniqueRegions(:)
+      TYPE(Variable_t), POINTER :: RegionLabels, RegionTagVar, FractureMaskVar, CollapseMaskVar, RegionRatioVar
+      TYPE(Variable_t), POINTER :: GroundedMaskVar, GroundedMaskElemVar
       TYPE(Mesh_t), POINTER :: Mesh
-      TYPE(Queue_t) :: Queue
-      TYPE(Element_t),POINTER :: Element,Parent
-      TYPE(Element_t),POINTER :: Faces(:),Face
+      TYPE(Element_t), POINTER :: Element
       TYPE(GaussIntegrationPoints_t) :: IP
-      TYPE(Nodes_t),SAVE :: Nodes
+      TYPE(Nodes_t), SAVE :: Nodes
       TYPE(ValueList_t), POINTER :: SolverParams
-      REAL(KIND=dp), ALLOCATABLE :: Basis(:), dBasisdx(:,:), &
-                                      ddBasisddx(:,:,:)
-      REAL(KIND=dp) :: s, detJ
-      REAL(KIND=dp) :: smallest,largest
-      REAL(KIND=dp), ALLOCATABLE :: RegionArea(:)
-      REAL(KIND=dp), ALLOCATABLE :: RegionFractureArea(:)
-      INTEGER, ALLOCATABLE :: RegionNoE(:)
+      REAL(KIND=dp), ALLOCATABLE :: Basis(:), dBasisdx(:,:), ddBasisddx(:,:,:)
+      REAL(KIND=dp), ALLOCATABLE :: RegionFractureArea(:), RegionRatio(:)
       LOGICAL, ALLOCATABLE :: RegionCollapse(:)
-      INTEGER :: EIndex
-      INTEGER :: label
-      INTEGER :: region
-      INTEGER,ALLOCATABLE :: ElementLabel(:)
-      INTEGER :: t,i,n,p,k
-      INTEGER :: nfaces
+      REAL(KIND=dp) :: detJ, s
+      REAL(KIND=dp) :: collapse_ratio, min_shelf_area
+      REAL(KIND=dp) :: groundedmask_threshold
+      REAL(KIND=dp) :: shelf_area, fracture_area, ratio
+      REAL(KIND=dp) :: gmask_sum
+      REAL(KIND=dp) :: gmin, gmax
+      REAL(Kind=dp) ::  largest,smallest
+      INTEGER :: n, nTags, t, p, region, EIndex, k, nfaces, regionTag
+      INTEGER :: i, node, knode, nvalid
+      INTEGER :: nMaskElems
+      INTEGER :: nSize
       INTEGER :: NOFActive
-      INTEGER, SAVE :: Visit=0
-      REAL(KIND=dp) :: collapse_ratio
-
-      LOGICAL :: stat,Found
-      LOGICAL :: SAVE_REGIONS
-      LOGICAL :: GotIt
+      LOGICAL :: Found, SAVE_REGIONS, stat
       LOGICAL :: FractureElemental
+      CHARACTER(LEN=MAX_NAME_LEN) :: SolverName = 'CollapseAreas_Parallel'
+      CHARACTER(LEN=MAX_NAME_LEN) :: RegionVarName, RegionElemVarName, RegionLabelVarName
+      CHARACTER(LEN=MAX_NAME_LEN) :: FractureVarName, CollapseVarName, GroundedMaskVarName
+      CHARACTER(LEN=MAX_NAME_LEN) :: FName, filename, GroundedMaskElemVarName
+      CHARACTER(LEN=MAX_NAME_LEN),PARAMETER :: VarName="RegionLabels"
+      TYPE(Variable_t),POINTER :: Var
+      REAL(KIND=dp), POINTER :: Values(:)
 
-      CHARACTER(LEN=MAX_NAME_LEN) :: SolverName='GetCollapseAreas'
-      CHARACTER(LEN=MAX_NAME_LEN) :: filename,FName
-      CHARACTER(LEN=MAX_NAME_LEN) :: FractureVarName, CollapseVarName
-
-      Visit = Visit + 1
       Mesh => Solver % Mesh
       SolverParams => GetSolverParams()
+      nSize= Mesh % NumberOfBulkElements
 
-      !Get the ratio for collapse:
+      ! Define a ratio for the collapse of connected regions based on the fracture area
       collapse_ratio = ListGetCReal(SolverParams,'Collapse Ratio',Found)
       IF (.NOT.Found) collapse_ratio = 0.5_dp
 
+      ! Define a minimum shelf area threshold to consider for collapse)
+      min_shelf_area = ListGetCReal(SolverParams,'Shelf Lower Limit for Collapse',Found)
+      IF (.NOT.Found) min_shelf_area = 0.0_dp
+
+      ! Gives the choice to include or exclude 0 (GL) grounded mask values on the shelf area
+      groundedmask_threshold = ListGetCReal(SolverParams,'GroundedMask Threshold',Found)
+      IF (.NOT.Found) groundedmask_threshold = 0._dp
+
+      GroundedMaskVarName = ListGetString(SolverParams,'GroundedMask Variable',Found)
+      IF (.NOT.Found) GroundedMaskVarName = 'GroundedMask'
+      GroundedMaskElemVarName = TRIM(GroundedMaskVarName)//'_Elem'
+      RegionLabelVarName = TRIM(GroundedMaskVarName)//'_RegionLabels'
+
       FractureVarName = ListGetString(SolverParams,'Fracture Variable',Found)
       IF (.NOT.Found) FractureVarName = 'fracture_mask'
+
       CollapseVarName = ListGetString(SolverParams,'Collapse Variable',Found)
       IF (.NOT.Found) CollapseVarName = 'CollapseMask'
 
       n = MAX(Mesh % MaxElementNodes,Mesh % MaxElementDOFs)
-      ALLOCATE(ElementLabel(Solver%Mesh%NumberOfBulkElements))
-      ALLOCATE( Basis(n), dBasisdx(n,3), ddBasisddx(n,3,3))
+      ALLOCATE(Basis(n), dBasisdx(n,3), ddBasisddx(n,3,3))
       ALLOCATE(Nodes%x(n),Nodes%y(n),Nodes%z(n))
 
 
-      CALL FindMeshEdges(Mesh,.FALSE.)
-      SELECT CASE(Mesh % MeshDim)
-       CASE(2)
-        Faces => Mesh % Edges
-       CASE(3)
-        Faces => Mesh % Faces
-      END SELECT
+      ! Get the grounded mask variable and produce its elemental version if it is nodal
+      GroundedMaskVar => VariableGet(Mesh % Variables,TRIM(GroundedMaskVarName),UnfoundFatal=.TRUE.)
+      IF (.NOT.ASSOCIATED(GroundedMaskVar%Perm)) &
+         CALL FATAL(SolverName,TRIM(GroundedMaskVarName)//' has no valid permutation')
 
-      CALL QueueInit(Queue,Mesh%NumberOfBulkElements)
+      GroundedMaskElemVar => EVarGet(Solver,TRIM(GroundedMaskElemVarName),nSize,.TRUE.)
+      IF (.NOT.ASSOCIATED(GroundedMaskElemVar%Perm)) &
+         CALL FATAL(SolverName,TRIM(GroundedMaskElemVarName)//' has no valid permutation')
+      IF (GroundedMaskElemVar%TYPE.NE.Variable_on_elements) &
+         CALL FATAL(SolverName,TRIM(GroundedMaskElemVarName)//' should be on_elements')
 
-      NOFActive=GetNOFActive()
-
-      ElementLabel=-1
-      label=1
-      
-      DO t=1,NOFActive
-         Element => GetActiveElement(t)
-         EIndex= Element % ElementIndex 
-
-         IF (CheckPassiveElement(Element)) CYCLE
-         IF (ElementLabel(EIndex).GT.0) CYCLE
-
-         ElementLabel(EIndex) = label
-         CALL QueuePush(Queue,EIndex)
-
-         DO WHILE (Queue%top.GT.0)
-            CALL QueuePop(Queue,EIndex)
-            Element => Mesh % Elements(EIndex)
-
-            SELECT CASE(Mesh % MeshDim)
-             CASE(2)
-              nfaces=Element % TYPE % NumberOfEdges
-             CASE(3)
-              nfaces=Element % TYPE % NumberOfFaces
-            END SELECT
-
-            DO i=1,nfaces
-              SELECT CASE(Mesh % MeshDim)
-               CASE(2)
-                Face =>  Mesh % Edges (Element % EdgeIndexes(i))
-               CASE(3)
-                Face =>  Mesh % Faces (Element % FaceIndexes(i))
-              END SELECT
-
-              IF (.NOT.ASSOCIATED(Face)) &
-                CALL FATAL(SolverName,'Face not found')
-
-              Parent => Face % BoundaryInfo % Left
-              IF (ASSOCIATED(Parent)) THEN 
-                 IF ((.NOT.CheckPassiveElement(Parent))&
-                      .AND.(ElementLabel(Parent%ElementIndex).LE.0)) THEN
-                   ElementLabel(Parent%ElementIndex)=label      
-                   CALL QueuePush(Queue,Parent%ElementIndex)
-                 END IF
-              END IF
-              Parent => Face % BoundaryInfo % Right
-              IF (ASSOCIATED(Parent)) THEN 
-                 IF ((.NOT.CheckPassiveElement(Parent))&
-                      .AND.(ElementLabel(Parent%ElementIndex).LE.0)) THEN
-                   ElementLabel(Parent%ElementIndex)=label      
-                   CALL QueuePush(Queue,Parent%ElementIndex)
-                 END IF
-              END IF
-
-            END DO           
-            
+      IF (GroundedMaskVar%TYPE .EQ. Variable_on_elements) THEN
+         
+         DO t=1,nSize
+            Element => Mesh % Elements(t)
+            EIndex = Element % ElementIndex
+            k = GroundedMaskVar % Perm(EIndex)
+            IF (k.GT.0) THEN
+               IF (GroundedMaskVar % Values(k) .LE. groundedmask_threshold) THEN
+                  GroundedMaskElemVar % Values(GroundedMaskElemVar % Perm(EIndex)) = -1._dp
+               ELSE
+                  GroundedMaskElemVar % Values(GroundedMaskElemVar % Perm(EIndex)) = 1._dp
+               END IF
+            ELSE
+               GroundedMaskElemVar % Values(GroundedMaskElemVar % Perm(EIndex)) = 1._dp
+            END IF
          END DO
-
-         label = label + 1
-      END DO
- 
-      label = label - 1
-      WRITE(Message,'(A,i0,A)') 'There is ',label,' unconnected areas'
-      CALL INFO(SolverName,TRIM(Message),level=3)
-
-      Var => VariableGet( Mesh % Variables,'RegionNumber',UnfoundFatal=.True.)
-      IF (.NOT.ASSOCIATED(Var%Perm)) &
-        CALL FATAL(SolverName,"RegionNumber has no valid permutation")
-      IF (Var%TYPE.NE.Variable_on_elements) &
-        CALL FATAL(SolverName,"RegionNumber should be on_elements")
-
-      Area => VariableGet( Mesh % Variables,'RegionArea',UnfoundFatal=.True.)
-      IF (.NOT.ASSOCIATED(Area%Perm)) &
-        CALL FATAL(SolverName,"RegionArea has no valid permutation")
-      IF (Area%TYPE.NE.Variable_on_elements) &
-        CALL FATAL(SolverName,"RegionArea should be on_elements")
-
-      NoE => VariableGet( Mesh % Variables,'RegionNoE',UnfoundFatal=.True.)
-      IF (.NOT.ASSOCIATED(NoE%Perm)) &
-        CALL FATAL(SolverName,"RegionNoE has no valid permutation")
-      IF (NoE%TYPE.NE.Variable_on_elements) &
-        CALL FATAL(SolverName,"RegionNoE should be on_elements")
-
-      FractureMaskVar => VariableGet( Mesh % Variables,TRIM(FractureVarName), &
-          UnfoundFatal=.TRUE.)
-      FractureElemental = (FractureMaskVar % TYPE .EQ. Variable_on_elements)
-      IF (.NOT.FractureElemental) THEN
-        CALL FATAL(SolverName,TRIM(FractureVarName)//" should be on_elements")
+      ELSE IF (GroundedMaskVar%TYPE .EQ. Variable_on_nodes) THEN
+         DO t=1,nSize
+            Element => Mesh % Elements(t)
+            EIndex = Element % ElementIndex
+            n = GetElementNOFNodes(Element)
+            gmask_sum = 0._dp
+            nvalid = 0
+            DO i=1,n
+               node = Element % NodeIndexes(i)
+               knode = GroundedMaskVar % Perm(node)
+               IF (knode.GT.0) THEN
+                  gmask_sum = gmask_sum + GroundedMaskVar % Values(knode)
+                  nvalid = nvalid + 1
+               END IF
+            END DO
+            IF (nvalid.GT.0) THEN
+               IF ((gmask_sum / REAL(nvalid,dp)) .LE. groundedmask_threshold) THEN
+                  GroundedMaskElemVar % Values(GroundedMaskElemVar % Perm(EIndex)) = -1._dp
+               ELSE
+                  GroundedMaskElemVar % Values(GroundedMaskElemVar % Perm(EIndex)) = 1._dp
+               END IF
+            ELSE
+               GroundedMaskElemVar % Values(GroundedMaskElemVar % Perm(EIndex)) = 1._dp
+            END IF
+         END DO
+      ELSE
+         CALL FATAL(SolverName,TRIM(GroundedMaskVarName)//' should be on_nodes or on_elements')
       END IF
 
-      CollapseMaskVar => VariableGet( Mesh % Variables,TRIM(CollapseVarName), &
-          UnfoundFatal=.TRUE.)
-      IF (.NOT.ASSOCIATED(CollapseMaskVar%Perm)) &
-        CALL FATAL(SolverName,TRIM(CollapseVarName)//" has no valid permutation")
-      IF (CollapseMaskVar%TYPE.NE.Variable_on_elements) &
-        CALL FATAL(SolverName,TRIM(CollapseVarName)//" should be on_elements")
+      nMaskElems = COUNT(GroundedMaskElemVar % Values .LE. -1._dp)
 
-      ALLOCATE(RegionArea(label),RegionFractureArea(label),RegionNoE(label),RegionCollapse(label))
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      ! Get the connected regions and their statistics
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      ! Build a dedicated label field to pass to GetConnected function 
+      ! so GroundedMaskElemVar stays as a mask (-1 to 1) and is not modified
+      RegionLabels => EVarGet(Solver,TRIM(RegionLabelVarName),nSize,.TRUE.)
+      IF (.NOT.ASSOCIATED(RegionLabels%Perm)) &
+         CALL FATAL(SolverName,TRIM(RegionLabelVarName)//' has no valid permutation')
+      IF (RegionLabels%TYPE.NE.Variable_on_elements) &
+         CALL FATAL(SolverName,TRIM(RegionLabelVarName)//' should be on_elements')
+
+      DO t=1,nSize
+         Element => Mesh % Elements(t)
+         EIndex = Element % ElementIndex
+         IF (RegionLabels % Perm(EIndex) <= 0) CYCLE
+         IF (GroundedMaskElemVar % Perm(EIndex) <= 0) CYCLE
+         RegionLabels % Values(RegionLabels % Perm(EIndex)) = &
+            GroundedMaskElemVar % Values(GroundedMaskElemVar % Perm(EIndex))
+      END DO
+
+      ! Get connected components from the dedicated label field.
+      print*, TRIM(RegionLabelVarName)
+      CALL GetConnected(Solver,RegionsStat,UniqueRegions,TRIM(RegionLabelVarName),CreateAux=.TRUE.)
+
+      ! After GetConnected, this variable contains the per-element region number.
+      RegionLabels => VariableGet(Mesh % Variables,TRIM(RegionLabelVarName),UnfoundFatal=.TRUE.)
+      IF (.NOT.ASSOCIATED(RegionLabels%Perm)) &
+         CALL FATAL(SolverName,TRIM(RegionLabelVarName)//' has no valid permutation')
+      IF (RegionLabels%TYPE.NE.Variable_on_elements) &
+         CALL FATAL(SolverName,TRIM(RegionLabelVarName)//' should be on_elements')
+
+      RegionTagVar => VariableGet(Mesh % Variables,TRIM(RegionLabelVarName)//'_Tag',UnfoundFatal=.TRUE.)
+      IF (.NOT.ASSOCIATED(RegionTagVar%Perm)) &
+         CALL FATAL(SolverName,TRIM(RegionLabelVarName)//'_Tag has no valid permutation')
+      IF (RegionTagVar%TYPE.NE.Variable_on_elements) &
+         CALL FATAL(SolverName,TRIM(RegionLabelVarName)//'_Tag should be on_elements')
+
+      nTags = SIZE(UniqueRegions)
+      WRITE(Message,'(A)') 'There is '//I2S(nTags)//' unconnected shelves'
+      CALL INFO(SolverName,Message,level=3)
+
+      IF (nTags <= 0) THEN
+         CALL WARN(SolverName,'No connected shelves found')
+         RETURN
+      END IF
+
+      largest=MAXVAL(UniqueRegions(:) % Area)
+      smallest=MINVAL(UniqueRegions(:) % Area)
+      WRITE(Message,'(A,e15.7)') 'largest shelf :',largest 
+      CALL INFO(SolverName,Message,level=3)
+      WRITE(Message,'(A,e15.7)') 'smallest shelf :',smallest
+      CALL INFO(SolverName,Message,level=3)
+
+      ! Definition of the Mask input
+      FractureMaskVar => VariableGet(Mesh % Variables,TRIM(FractureVarName),UnfoundFatal=.TRUE.)
+      IF (.NOT.ASSOCIATED(FractureMaskVar%Perm)) &
+         CALL FATAL(SolverName,TRIM(FractureVarName)//' has no valid permutation')
+      FractureElemental = (FractureMaskVar % TYPE .EQ. Variable_on_elements)
+      IF (.NOT.FractureElemental) &
+         CALL FATAL(SolverName,TRIM(FractureVarName)//' should be on_elements')
       
-      RegionArea=0._dp
-      RegionFractureArea=0._dp
-      RegionNoE=0
-      RegionCollapse=.FALSE.
-      Var % Values = -1
-      Area % Values = -1
-      NoE % Values = -1
-      CollapseMaskVar % Values = -1
+      print*, "Retrieved FactureMaskVar: ", TRIM(FractureVarName), ", Elemental: ", FractureElemental
 
 
-      DO t=1,NOFActive
-         Element => GetActiveElement(t)
-         EIndex= Element % ElementIndex 
-         n  = GetElementNOFNodes(Element)
+      ! Collapsing Mask result
+      CollapseMaskVar => EVarGet(Solver,CollapseVarName,nSize,.TRUE.)
+      IF (.NOT.ASSOCIATED(CollapseMaskVar%Perm)) &
+         CALL FATAL(SolverName,TRIM(CollapseVarName)//' has no valid permutation')
+      IF (CollapseMaskVar%TYPE.NE.Variable_on_elements) &
+         CALL FATAL(SolverName,TRIM(CollapseVarName)//' should be on_elements')
 
-         region=ElementLabel(EIndex)
-         IF (region.LE.0) CYCLE
+      RegionRatioVar => EVarGet(Solver,'RegionRatio',nSize,.TRUE.)
+      IF (.NOT.ASSOCIATED(RegionRatioVar%Perm)) &
+         CALL FATAL(SolverName,'RegionRatio has no valid permutation')
+      IF (RegionRatioVar%TYPE.NE.Variable_on_elements) &
+         CALL FATAL(SolverName,'RegionRatio should be on_elements')
 
-         Var % Values(Var%Perm(EIndex)) = region
-         RegionNoE(region) =   RegionNoE(region) + 1
+      print*, "Retrieved CollapseMaskVar: ", TRIM(CollapseVarName)
 
-         Nodes % x(1:n) = Mesh % Nodes % x(Element % NodeIndexes(1:n))
-         Nodes % y(1:n) = Mesh % Nodes % y(Element % NodeIndexes(1:n))
-         Nodes % z(1:n) = Mesh % Nodes % z(Element % NodeIndexes(1:n))
-         IP = GaussPoints( Element )
-         DO p = 1, IP % n
-           stat = ElementInfo( Element, Nodes, IP % U(p), IP % V(p), &
-             IP % W(p), detJ, Basis, dBasisdx, ddBasisddx, .FALSE.) 
-           s = detJ * IP % S(p)                           
+      ALLOCATE(RegionFractureArea(nTags),RegionRatio(nTags),RegionCollapse(nTags))
+      RegionFractureArea = 0._dp
+      RegionRatio = 0._dp
+      RegionCollapse = .FALSE.
+      CollapseMaskVar % Values = -1._dp
+      RegionRatioVar % Values = -1._dp
+      
+      ! Compute the Fracture Area per connected shelf
+      DO t=1,nSize
+         Element => Mesh % Elements(t)
+         EIndex = Element % ElementIndex
 
-            RegionArea(region) = RegionArea(region)  + s
+         IF (ParEnv % PEs > 1) THEN
+            IF (Element % PartIndex /= ParEnv % MyPE) CYCLE
+         END IF
 
-            IF (FractureElemental) THEN
-              k = FractureMaskVar % Perm(EIndex)
-              IF (k > 0) THEN
-                IF (FractureMaskVar % Values(k) .GT. 0._dp) THEN
-                  RegionFractureArea(region) = RegionFractureArea(region) + s
-                END IF
-              END IF
+         IF (RegionTagVar % Perm(EIndex) <= 0) CYCLE
+         regionTag = NINT(RegionTagVar % Values(RegionTagVar % Perm(EIndex)))
+         IF (regionTag.LE.0) CYCLE
+         region = 0
+         DO k=1,nTags
+            IF (UniqueRegions(k) % Tag == regionTag) THEN
+               region = k
+               EXIT
             END IF
-        END DO
-
-      END DO
-
-      DO region=1,label
-        IF (RegionArea(region) .GT. 0._dp) THEN
-          IF ((RegionFractureArea(region) / RegionArea(region)) .GT. collapse_ratio) THEN
-            RegionCollapse(region) = .TRUE.
-          END IF
-        END IF
-      END DO
-
-      DO t=1,NOFActive
-         Element => GetActiveElement(t)
-         EIndex= Element % ElementIndex
-         region=ElementLabel(EIndex)
-         IF (region.GT.0) THEN
-           Area % Values(Area % Perm(EIndex))=RegionArea(region)
-           NoE % Values(NoE%Perm(EIndex))= RegionNoE(region)
-           IF (RegionCollapse(region)) THEN
-             CollapseMaskVar % Values(CollapseMaskVar % Perm(EIndex)) = 1._dp
-           ELSE
-             CollapseMaskVar % Values(CollapseMaskVar % Perm(EIndex)) = 0._dp
-           END IF
+         END DO
+         IF (region.LE.0) CYCLE
+             ! Region membership is already encoded by RegionLabels (region>0).
+             ! Only keep elements flagged by the fracture mask for numerator area.
+         IF (FractureMaskVar % Perm(EIndex) <= 0) CYCLE
+             IF (FractureMaskVar % Values(FractureMaskVar % Perm(EIndex)) .GT. 0._dp) THEN
+            n = GetElementNOFNodes(Element)
+            Nodes % x(1:n) = Mesh % Nodes % x(Element % NodeIndexes(1:n))
+            Nodes % y(1:n) = Mesh % Nodes % y(Element % NodeIndexes(1:n))
+            Nodes % z(1:n) = Mesh % Nodes % z(Element % NodeIndexes(1:n))
+            IP = GaussPoints(Element)
+            s = 0._dp
+            DO p=1,IP % n
+               stat = ElementInfo(Element,Nodes,IP % U(p),IP % V(p),IP % W(p),detJ,Basis,dBasisdx,ddBasisddx,.FALSE.)
+               s = s + detJ * IP % S(p)
+            END DO
+            RegionFractureArea(region) = RegionFractureArea(region) + s
          END IF
       END DO
 
-      largest=MAXVAL(RegionArea)
-      smallest=MINVAL(RegionArea)
-      WRITE(Message,'(A,e15.7)') 'largest area :',largest
-      CALL INFO(SolverName,TRIM(Message),level=3)
-      WRITE(Message,'(A,e15.7)') 'smallest area :',smallest
-      CALL INFO(SolverName,TRIM(Message),level=3)
+      ! Collapse the connected shelves based on the fracture area ratio
+      DO region=1,nTags
+         shelf_area = UniqueRegions(region) % Area
 
-      SAVE_REGIONS=ListGetLogical(SolverParams,'Save regions labels',Found)
-      IF (.NOT.Found) SAVE_REGIONS=.FALSE.
+         ! if shelf_area is < min_shelf_area, then the region is too small to be considered for collapse
+         IF (shelf_area < min_shelf_area) CYCLE
+
+         fracture_area = RegionFractureArea(region)
+         IF (shelf_area > 0._dp) THEN
+            ratio = fracture_area / shelf_area
+            RegionRatio(region) = ratio
+            IF (ratio > collapse_ratio) RegionCollapse(region) = .TRUE.
+            
+         END IF
+      END DO
+
+      DO t=1,nSize
+         Element => Mesh % Elements(t)
+         EIndex = Element % ElementIndex
+
+         IF (ParEnv % PEs > 1) THEN
+            IF (Element % PartIndex /= ParEnv % MyPE) CYCLE
+         END IF
+
+         IF (RegionTagVar % Perm(EIndex) <= 0) CYCLE
+         regionTag = NINT(RegionTagVar % Values(RegionTagVar % Perm(EIndex)))
+         IF (regionTag.LE.0) CYCLE
+         region = 0
+         DO k=1,nTags
+            IF (UniqueRegions(k) % Tag == regionTag) THEN
+               region = k
+               EXIT
+            END IF
+         END DO
+         IF (region.LE.0) CYCLE
+
+         IF (CollapseMaskVar % Perm(EIndex) <= 0) CYCLE
+         IF (RegionRatioVar % Perm(EIndex) <= 0) CYCLE
+         IF (RegionCollapse(region)) THEN
+            CollapseMaskVar % Values(CollapseMaskVar % Perm(EIndex)) = 1._dp
+         ELSE
+            CollapseMaskVar % Values(CollapseMaskVar % Perm(EIndex)) = 0._dp
+         END IF
+         RegionRatioVar % Values(RegionRatioVar % Perm(EIndex)) = RegionRatio(region)
+      END DO
+
+      SAVE_REGIONS = ListGetLogical(SolverParams,'Save regions labels',Found)
+      IF (.NOT.Found) SAVE_REGIONS = .FALSE.
       IF (SAVE_REGIONS) THEN
-        FName=ListGetString(SolverParams,'File Name',UnFoundFatal=.TRUE.)
-        write(filename,'(A,A,I0)') Trim(FName),'.',Visit
-        Open(12,file=trim(filename))
-        DO i=1,label
-          write(12,*) i,RegionNoE(i),RegionArea(i),RegionFractureArea(i),RegionCollapse(i)
-        END DO
-        close(12)
+         FName = ListGetString(SolverParams,'File Name',Found)
+         IF (.NOT.Found) FName = 'output_collapse.txt'
+         filename = TRIM(FName)
+         OPEN(12,file=TRIM(filename))
+         DO region=1,nTags
+            shelf_area = UniqueRegions(region) % Area
+            fracture_area = RegionFractureArea(region)
+            ratio = 0._dp
+            IF (shelf_area > 0._dp) ratio = fracture_area / shelf_area
+            !write(12,*) region, UniqueRegions(region)%Tag, UniqueRegions(region)%NoE, shelf_area, fracture_area, ratio, RegionCollapse(region)
+         END DO
+         CLOSE(12)
       END IF
 
-      DEALLOCATE(ElementLabel)
-      DEALLOCATE(RegionArea,RegionFractureArea,RegionNoE,RegionCollapse)
+      DEALLOCATE(RegionFractureArea,RegionRatio,RegionCollapse)
       DEALLOCATE(Basis,dBasisdx,ddBasisddx)
-      DEALLOCATE(Queue%items)
       DEALLOCATE(Nodes%x,Nodes%y,Nodes%z)
 
-
-      CONTAINS 
-        SUBROUTINE QueueInit(Queue,n)
-        IMPLICIT NONE
-        TYPE(Queue_t) :: Queue
-        INTEGER :: n
-          ALLOCATE(Queue%items(n))
-          Queue%top=0
-          Queue%maxsize=n
-        END SUBROUTINE QueueInit
-
-        SUBROUTINE QueuePush(Queue,x)
-        IMPLICIT NONE
-        TYPE(Queue_t) :: Queue
-        INTEGER :: x
-          IF (Queue%top.EQ.Queue%maxsize) &
-            CALL FATAL(SolverName,'Too many elements in the queue?')
-
-          Queue%top=Queue%top+1
-          Queue%items(Queue%top)=x
-
-        END SUBROUTINE QueuePush
-
-        SUBROUTINE QueuePop(Queue,x)
-        IMPLICIT NONE
-        TYPE(Queue_t) :: Queue
-        INTEGER :: x
-          IF (Queue%top.EQ.0) &
-            CALL FATAL(SolverName,'No more element in the queue')
-
-          x=Queue%items(Queue%top)
-          Queue%top=Queue%top-1
-        END SUBROUTINE QueuePop
-      END
-
-
-
+      END SUBROUTINE CollapseAreas_Parallel

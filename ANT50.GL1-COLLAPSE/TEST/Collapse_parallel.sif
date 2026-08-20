@@ -110,7 +110,7 @@ Solver 3
    Exec Solver= Before Timestep
    Equation = "CollapseAreas"
    Variable = -dofs 1 dummy
-   Procedure = "CollapseAreas_Parallel" "CollapseAreas_Parallel"
+   Procedure = "CollapseAreas" "CollapseAreas"
 
    Optimize Bandwidth = False
 

@@ -4,11 +4,11 @@ mesh_output = MSH.P$n
 
 compile:
 	elmerf90 ../MY_SRC/GetConnectedAreas.F90 -o GetConnectedAreas
-	elmerf90 ../MY_SRC/CollapseAreas.F90 -o CollapseAreas
+	elmerf90 ../MY_SRC/CollapseAreas_Serial.F90 -o CollapseAreas_Serial
 	elmerf90 ../MY_SRC/passive_cond.F90 -o passive_cond
 	elmerf90 ../MY_SRC/passive_fracture.F90 -o passive_fracture
 	elmerf90 ../MY_SRC/ExcludeAreas.F90 -o ExcludeAreas
-	elmerf90 ../MY_SRC/ConnectedAreasUtils.F90 ../MY_SRC/CollapseAreas_Parallel.F90 -o CollapseAreas_Parallel
+	elmerf90 ../MY_SRC/ConnectedAreasUtils.F90 ../MY_SRC/CollapseAreas.F90 -o CollapseAreas
 run:
 	ElmerSolver Collapse.sif
 run_p1:
