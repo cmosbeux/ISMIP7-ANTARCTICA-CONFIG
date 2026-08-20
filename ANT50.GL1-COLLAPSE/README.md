@@ -4,11 +4,13 @@ Authors: Cyrille Mosbeux and Fabien Gillet-Chaulet
 
 Participation in ISMIP7 requires implementing collapse mechanisms based either on a physical dependence on water content and/or stress, or on a predefined mask of regions prone to collapse established by the ISMIP7 team.
 
-This development focuses on the numerical implementation of the second, simpler approach. It can be adapted to include other physical constraints if needed.
+This development focuses on the numerical implementation of the second, simpler approach. It can be adapted to include other physical constraints if needed. 
 
 ## Source code
 
 The Fortran source files are available in the `MY_SRC` directory. Example test configuration files are provided in the `TEST` directory.
+
+Both serial and parallel implementations are available. The parallel version works in both serial and parallel runs and is preferred. The serial version was the initial attempt and is kept only for reference.
 
 ## Solver usage
 
