@@ -4,6 +4,7 @@ if [[ $# != 2 ]]; then echo "Usage process_XIOS_output [AIS or GIS] [EXP]"; exit
 
 EXPLST=${@:2}
 ISNAME=$1
+SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 
 TMPDIR=$CCCSCRATCHDIR/TMPDIR_XIOStoELMER/
 DATAOUT=$CCCSCRATCHDIR/TMPDIR_XIOStoELMER/DATA_ISMIP6
@@ -22,10 +23,9 @@ echo "   DONE"
 
 # link grid file in TMP
 echo ""
-echo "link ${GRIDIN} and ${GRIDOUT}"
-DIR=`pwd`
-if [ ! -d $TMPDIR  ]; then mkdir -p $TMPDIR; fi ; ln -sf $TMPDIR TMPDIR;
-if [ ! -d $DATAOUT ]; then mkdir -p $DATAOUT; fi ; ln -sf $DATAOUT DATA_ISMIP6
+echo "prepare scratch directories"
+if [ ! -d "$TMPDIR"  ]; then mkdir -p "$TMPDIR"; fi
+if [ ! -d "$DATAOUT" ]; then mkdir -p "$DATAOUT"; fi
 
 if [[ $nerr != 0 ]]; then
    echo 'E R R O R during linking stage; exit 42'
@@ -43,30 +43,32 @@ for EXP in $EXPLST; do
    echo ""
    echo "Convert XIOS output in $EXP to ISMIP6 compliant output ..."
 
-   if [ ! -d LOG_$EXP ]; then mkdir LOG_$EXP; fi
+   if [ ! -d "$SCRIPT_DIR"/LOG_$EXP ]; then mkdir "$SCRIPT_DIR"/LOG_$EXP; fi
    # work file by file : 
    # concatanate all the files for scalar, fluxes and states
    nerr=0
    cexp=`echo "$EXP" | tr '[:upper:]' '[:lower:]'` || nerr=$((nerr+1))
-   if [ -f TMPDIR/ismip6_scalar_${cexp}.nc ]; then rm TMPDIR/ismip6_scalar_${cexp}.nc ; fi
-   ncrcat -O DATA_XIOS/$EXP/ismip6_scalar_${cexp}_???.nc TMPDIR/ismip6_scalar_${cexp}.nc || nerr=$((nerr+1)) &
+   if [ -f "$TMPDIR"/DATA_XIOS/"$EXP"/ismip6_scalars_${cexp}.nc ]; then rm "$TMPDIR"/DATA_XIOS/"$EXP"/ismip6_scalars_${cexp}.nc ; fi
+   ncrcat -O "$TMPDIR"/DATA_XIOS/$EXP/ismip6_scalars_${cexp}_???.nc "$TMPDIR"/DATA_XIOS/"$EXP"/ismip6_scalars_${cexp}.nc || nerr=$((nerr+1)) &
 
-   if [ -f TMPDIR/ismip6_scalar_${cexp}.nc ]; then rm TMPDIR/ismip6_scalar_${cexp}.nc ; fi
-   ncrcat -O DATA_XIOS/$EXP/ismip6_scalar_${cexp}_???.nc TMPDIR/ismip6_scalar_${cexp}.nc || nerr=$((nerr+1)) &
+   if [ -f "$TMPDIR"/DATA_XIOS/"$EXP"/ismip6_scalars_true_cell_area_${cexp}.nc ]; then rm "$TMPDIR"/DATA_XIOS/"$EXP"/ismip6_scalars_true_cell_area_${cexp}.nc ; fi
+   ncrcat -O "$TMPDIR"/DATA_XIOS/$EXP/ismip6_scalars_true_cell_area_${cexp}_???.nc "$TMPDIR"/DATA_XIOS/"$EXP"/ismip6_scalars_true_cell_area_${cexp}.nc || nerr=$((nerr+1)) &
    wait
 
    if [[ $nerr != 0 ]]; then
       echo 'E R R O R during concatenation stage; exit 42'
       exit 42
+   else
+      echo "   Concatenation DONE."
    fi
 
    # run conservative interpolation variable by variable
-   FILE=ismip6_scalar_${cexp}.nc
+   FILE=ismip6_scalars_${cexp}.nc
    for VAR in lim limnsw iareagr iareafl tendacabf tendlibmassbf tendlibmassbffl tendlifmassbf tendligroundf ;  do
       echo ""
       echo "Extract $VAR ..."
       echo ""
-      time ncks -v $VAR $FILE ${VAR}_${ISNAME}_IGE_ElmerIce_${EXP}.nc || nerr=$((nerr+1))
+      time ncks -v $VAR "$TMPDIR"/DATA_XIOS/"$EXP"/$FILE "$DATAOUT"/${VAR}_${ISNAME}_IGE_ElmerIce_${EXP}.nc || nerr=$((nerr+1))
    done
 
    wait
@@ -76,12 +78,12 @@ for EXP in $EXPLST; do
       exit 42
    fi
 
-   FILE=ismip6_scalar_true_cell_area_${cexp}.nc
+   FILE=ismip6_scalars_true_cell_area_${cexp}.nc
    for VAR in lim_tca limnsw_tca iareagr_tca iareafl_tca tendacabf_tca tendlibmassbf_tca tendlibmassbffl_tca tendlifmassbf_tca tendligroundf_tca ;  do
       echo ""
       echo "Extract $VAR ..."
       echo ""
-      time ncks -v $VAR $FILE ${VAR}_${ISNAME}_IGE_ElmerIce_${EXP}.nc || nerr=$((nerr+1))
+      time ncks -v $VAR "$TMPDIR"/DATA_XIOS/"$EXP"/$FILE "$DATAOUT"/${VAR}_${ISNAME}_IGE_ElmerIce_${EXP}.nc || nerr=$((nerr+1))
    done
 
    wait

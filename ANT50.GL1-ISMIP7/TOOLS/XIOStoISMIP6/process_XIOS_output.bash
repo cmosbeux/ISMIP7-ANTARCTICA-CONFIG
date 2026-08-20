@@ -6,6 +6,7 @@ EXPLST=${@:4}
 GRIDIN=$1
 GRIDOUT=$2
 ISNAME=$3
+SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 
 GRIDINfile=${GRIDIN}_grid.nc
 GRIDOUTfile=${GRIDOUT}_grid.nc
@@ -28,13 +29,12 @@ echo "   DONE"
 # link grid file in TMP
 echo ""
 echo "link ${GRIDIN} and ${GRIDOUT}"
-DIR=`pwd`
-if [ ! -d $TMPDIR  ]; then mkdir -p $TMPDIR; fi ; ln -sf $TMPDIR TMPDIR;
-if [ ! -d $DATAOUT ]; then mkdir -p $DATAOUT; fi ; ln -sf $DATAOUT DATA_ISMIP6
-if [ ! -f GRID_XIOS/${GRIDINfile}  ]; then echo "E R R O R: $GRIDINfile  is missing"; exit 42; fi
-if [ ! -f GRID_ISMIP6/$GRIDOUTfile ]; then echo "E R R O R: $GRIDOUTfile is missing"; exit 42; fi
-ln -sf $DIR/GRID_XIOS/${GRIDINfile} $TMPDIR/.   || nerr=$((nerr+1))
-ln -sf $DIR/GRID_ISMIP6/$GRIDOUTfile $TMPDIR/.  || nerr=$((nerr+1))
+if [ ! -d "$TMPDIR"  ]; then mkdir -p "$TMPDIR"; fi
+if [ ! -d "$DATAOUT" ]; then mkdir -p "$DATAOUT"; fi
+if [ ! -f "$SCRIPT_DIR"/GRID_XIOS/${GRIDINfile}  ]; then echo "E R R O R: $GRIDINfile  is missing"; exit 42; fi
+if [ ! -f "$SCRIPT_DIR"/GRID_ISMIP6/$GRIDOUTfile ]; then echo "E R R O R: $GRIDOUTfile is missing"; exit 42; fi
+ln -sf "$SCRIPT_DIR"/GRID_XIOS/${GRIDINfile} "$TMPDIR"/.   || nerr=$((nerr+1))
+ln -sf "$SCRIPT_DIR"/GRID_ISMIP6/$GRIDOUTfile "$TMPDIR"/.  || nerr=$((nerr+1))
 
 if [[ $nerr != 0 ]]; then
    echo 'E R R O R during linking stage; exit 42'
@@ -44,7 +44,7 @@ else
 fi
 
 # Compute weights
-cd TMPDIR
+cd "$TMPDIR"
 echo ""
 echo "Compute weights for remapping from ${GRIDIN} to ${GRIDOUT}"
 echo '    destarea normalization weights'
@@ -64,7 +64,7 @@ else
    echo "   DONE"
 fi
 
-cd ..
+cd "$SCRIPT_DIR" || exit 42
 
 # compute final output file
 #    - concatenation exp by exp
@@ -80,11 +80,11 @@ for EXP in $EXPLST; do
    # concatanate all the files for scalar, fluxes and states
    nerr=0
    cexp=`echo "$EXP" | tr '[:upper:]' '[:lower:]'` || nerr=$((nerr+1))
-   if [ -f TMPDIR/ismip6_fluxes_${cexp}.nc ]; then rm TMPDIR/ismip6_fluxes_${cexp}.nc ; fi
-   ncrcat -O DATA_XIOS/$EXP/ismip6_fluxes_${cexp}_???.nc TMPDIR/ismip6_fluxes_${cexp}.nc || nerr=$((nerr+1)) &
+   if [ -f "$TMPDIR"/ismip6_fluxes_${cexp}.nc ]; then rm "$TMPDIR"/ismip6_fluxes_${cexp}.nc ; fi
+   ncrcat -O "$TMPDIR"/DATA_XIOS/$EXP/ismip6_fluxes_${cexp}_???.nc "$TMPDIR"/ismip6_fluxes_${cexp}.nc || nerr=$((nerr+1)) &
 
-   if [ -f TMPDIR/ismip6_states_${cexp}.nc ]; then rm TMPDIR/ismip6_states_${cexp}.nc ; fi
-   ncrcat -O DATA_XIOS/$EXP/ismip6_states_${cexp}_???.nc TMPDIR/ismip6_states_${cexp}.nc || nerr=$((nerr+1)) &
+   if [ -f "$TMPDIR"/ismip6_states_${cexp}.nc ]; then rm "$TMPDIR"/ismip6_states_${cexp}.nc ; fi
+   ncrcat -O "$TMPDIR"/DATA_XIOS/$EXP/ismip6_states_${cexp}_???.nc "$TMPDIR"/ismip6_states_${cexp}.nc || nerr=$((nerr+1)) &
    wait
 
    if [[ $nerr != 0 ]]; then
@@ -93,12 +93,13 @@ for EXP in $EXPLST; do
    fi
 
    # run conservative interpolation variable by variable
+
    FILE=ismip6_states_${cexp}.nc
    for VAR in lithk orog base topg xvelmean yvelmean strbasemag lithkaf velmean; do
       echo ""
       echo "Interpolate $VAR ..."
       echo ""
-      time ./compute_interpolation.bash $VAR $FILE $GRIDINfile $GRIDOUTfile $WEIGHTS_fracarea ${ISNAME} ${EXP} > LOG_$EXP/log_${VAR}_${ISNAME}_${EXP} || nerr=$((nerr+1))
+      time bash "$SCRIPT_DIR"/compute_interpolation.bash $VAR $FILE $GRIDINfile $GRIDOUTfile $WEIGHTS_fracarea ${ISNAME} ${EXP} > LOG_$EXP/log_${VAR}_${ISNAME}_${EXP} || nerr=$((nerr+1))
    done
 
    wait
@@ -113,7 +114,7 @@ for EXP in $EXPLST; do
       echo ""
       echo "Interpolate $VAR ..."
       echo ""
-      time ./compute_interpolation.bash $VAR $FILE $GRIDINfile $GRIDOUTfile $WEIGHTS_fracarea ${ISNAME} ${EXP} > LOG_$EXP/log_${VAR}_${EXP} || nerr=$((nerr+1)) &
+      time bash "$SCRIPT_DIR"/compute_interpolation.bash $VAR $FILE $GRIDINfile $GRIDOUTfile $WEIGHTS_fracarea ${ISNAME} ${EXP} > LOG_$EXP/log_${VAR}_${EXP} || nerr=$((nerr+1)) &
    done
 
    # ice fraction need to be normalized with destarea to represent the effective ice fraction in the output grid (ie to take into accound different coastline in src and targ grid)
@@ -122,7 +123,7 @@ for EXP in $EXPLST; do
       echo ""
       echo "Interpolate $VAR ..."
       echo ""
-      time ./compute_interpolation.bash $VAR $FILE $GRIDINfile $GRIDOUTfile $WEIGHTS_destarea ${ISNAME} ${EXP} > LOG_$EXP/log_${VAR}_${EXP} || nerr=$((nerr+1)) &
+      time bash "$SCRIPT_DIR"/compute_interpolation.bash $VAR $FILE $GRIDINfile $GRIDOUTfile $WEIGHTS_destarea ${ISNAME} ${EXP} > LOG_$EXP/log_${VAR}_${EXP} || nerr=$((nerr+1)) &
    done
 
    wait

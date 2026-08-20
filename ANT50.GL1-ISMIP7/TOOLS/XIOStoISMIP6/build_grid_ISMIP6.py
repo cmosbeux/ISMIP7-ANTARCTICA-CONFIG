@@ -126,5 +126,5 @@ ds = xr.Dataset(data_vars=data_grid,
 # In[153]:
 
 
-ds.to_netcdf('ISMIP6_grid_AIS_'+str(res)+'m.nc')
+ds.to_netcdf('ISMIP6_AIS_'+str(res)+'m_grid.nc')
 
