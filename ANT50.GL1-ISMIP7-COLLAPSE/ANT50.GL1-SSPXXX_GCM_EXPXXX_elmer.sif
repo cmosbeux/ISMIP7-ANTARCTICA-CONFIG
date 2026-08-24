@@ -320,6 +320,12 @@ Solver 7
   Collapse Ratio = Real 0.6
   Shelf Lower Limit for Collapse = Real 2e7
 
+  ! Optional thickness update in collapsed regions:
+  ! none | passive | minimum | factor
+  Collapse Thickness Mode = String "factor"
+  Collapse Thickness Factor = Real 0.8
+  ! Collapse Min Thickness = Real 1.0
+
   File Name = File "output_collapse.txt"
 End
 
@@ -365,7 +371,6 @@ End
 !#-----------------------------------------------------------------------
 
 Solver 9
-  !Exec Solver = Never  
   Equation = "MELT"
   Variable = -nooutput dummy
   Procedure = "Melt" "MeltSolver"
