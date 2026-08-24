@@ -1,0 +1,14 @@
+name: elmer
+channels:
+  - defaults
+dependencies:
+  - python=3.7
+  - cartopy
+  - pyproj
+  - netcdf4
+  - numpy
+  - xarray
+  - matplotlib
+  - pandas
+prefix: /home/pmathiot/.conda/envs/elmer
+

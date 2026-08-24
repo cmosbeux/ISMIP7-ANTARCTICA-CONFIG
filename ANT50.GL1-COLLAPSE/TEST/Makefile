@@ -19,3 +19,15 @@ mesh:
 	ElmerGrid 2 2 "$(mesh_output)" -partdual -metiskway "$(n)" -halo -autoclean
 clean:
 	rm -f output_collapse.txt*
+links:
+	ln -s ../../../COLLAPSE-DATA/MSH/restart_ant50.gl1.init_2000-2015.nc
+	ln -s ../../../COLLAPSE-DATA/VTUs_Outputs
+	ln -s ../../../COLLAPSE-DATA/MSH/MSH.P2
+	ln -s ../../../COLLAPSE-DATA/UGRID_Fracture
+del_links:
+	rm restart_ant50.gl1.init_2000-2015.nc
+	rm VTUs_Outputs
+	rm MSH.P2
+	rm UGRID_Fracture
+
+

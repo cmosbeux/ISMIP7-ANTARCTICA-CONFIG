@@ -1,0 +1,42 @@
+!###################### FILE ########################
+! WARNING : the number of characters is limited to 128.
+!
+! define simulation name
+$name="ANT50.GL1-HISTO_IPSL-CM6A-LR_MAR_EXP001"
+!
+! define data_dir
+$data_dir = /ccc/work/cont003/gen6035/mosbeuxc/PROTECT
+!$data_dir = "/ccc/work/cont003/gen6066/gen6066/ISMIP6/ISMIP6_ANT"
+!
+! define output_dir
+$out_dir = "/ccc/scratch/cont003/gen6066/mosbeuxc/ELMER/ANT50.GL1/PROTECT/ANT50.GL1_SSP585_IPSL-CM6A-LR_MAR_EXP001_S"
+!
+!-----------------------------------------------------------
+! BMB files
+!-----------------------------------------------------------
+! define the PICO file
+$file_pico = "FORCINGS/OCEAN/IPSL-CM6A-LR_PICO/MAR-IPSL-CM6A-LR_1980-2014_histo_PICO.nc"
+!
+! define the quadratic local file
+! TOADD once solver and file ready
+!
+!-----------------------------------------------------------
+! SMB files
+!-----------------------------------------------------------
+! define smb reference file
+$file_smb = "FORCING/ATMOSPHERE/CASE=SSP585_IPSL-CM6A-LR_MAR_EXP001ERENCE/RACMO/racmo_ant50.gl1_19952014_smbice_days.nc"
+!
+$file_asmb = "FORCINGS/ATMOSPHERE/CONSERVATIVE_SMB/MAR-IPSL-CM6A-LR_asmb_1980-2014_histo_regrid_04000m.nc_conservative.nc"
+!
+!-----------------------------------------------------------
+! Post Processing files
+!-----------------------------------------------------------
+! define basin file (PICO basins)
+$file_basins = "BASIN/schmidtko_initmip8km_means.nc"
+!
+! define basin file (iceshelf basins)
+$file_basins_isf = "BASIN/IceBoundaries_Y2015-2017_Antarctica_v2.2.1_extrap.nc"
+$var_isf = "ID_isf"
+!
+! define true cell area
+$truecellarea = "GRID/true_cell_area.nc"

@@ -1,0 +1,41 @@
+!###################### FILE ########################
+! WARNING : the number of characters is limited to 128.
+!
+! define simulation name
+$name= "ANT50.GL1-SSPXXX_GCM_EXPXXX"
+!
+! define data_dir
+$data_dir = "/ccc/work/cont003/gen6066/mosbeuxc/ISMIP7-SIMULATIONS/FORCINGS"
+!
+! define output_dir
+$out_dir = "/ccc/scratch/cont003/gen6066/mosbeuxc/ELMER/ANT50.GL1/PROTECT/ANT50.GL1-SSPXXX_GCM_EXPXXX_S"
+!
+!-----------------------------------------------------------
+! BMB files
+!-----------------------------------------------------------
+! define the PICO file
+$file_pico = "OCEAN/GCM_PICO/GCM_SSPXXX_PICO_OINITIAL_DATE-OFINAL_DATE.nc"
+!
+! define the quadratic local file
+! TOADD once solver and file ready
+!
+!-----------------------------------------------------------
+! SMB files
+!-----------------------------------------------------------
+! define smb reference file
+$file_smb = "ATMOSPHERE/SMB_REF/racmo_ant50.gl1_19952014_smbice_days.nc"
+!
+$file_asmb = "ATMOSPHERE/SMB/GCM_asmb_AINITIAL_DATE-AFINAL_DATE_sspxxx_elmer.nc"
+!
+!-----------------------------------------------------------
+! Post Processing files
+!-----------------------------------------------------------
+! define basin file (PICO basins)
+$file_basins = "BASIN/schmidtko_initmip8km_means.nc"
+!
+! define basin file (iceshelf basins)
+$file_basins_isf = "BASIN/IceBoundaries_Y2015-2017_Antarctica_v2.2.1_extrap.nc"
+$var_isf = "ID_isf"
+!
+! define true cell area
+$truecellarea = "GRID/true_cell_area.nc"

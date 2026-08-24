@@ -1,0 +1,18 @@
+! definition of the friction law (linear, Weertman, Coulomb or Regularized coulomb)
+
+  SSA Friction Law = String "Regularized coulomb"
+  SSA Friction Parameter = Variable beta_cr, haf
+       Real Procedure "SlipCoef" "Calcul_Slc"
+  SSA Friction Threshold Velocity = Real $Vthres
+  SSA Friction Threshold Height = Real $Hthres
+  SSA Friction Exponent = Real $1.0/n
+  SSA Friction Linear Velocity = Real $Vmin
+
+    ! linear needed parameter
+    ! -------------------------------------
+!    SSA Friction Law = string "Weertman"
+!    SSA Friction Parameter = Equals beta_3
+!    SSA Friction Exponent = Real $1.0/3.0
+
+!    SSA Friction Linear Velocity = Real 0.00001
+

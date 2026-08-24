@@ -1,0 +1,90 @@
+<?xml version="1.0"?>
+<!-- Context elmerice -->
+<context id="elmerice">
+
+    <calendar type="NoLeap" time_origin="0000-01-01 00:00:00" />
+
+<!-- ============== FIELD DEFINITION =========================== -->
+  <field_definition enabled=".TRUE." >
+     <field_group id="elmer" operation="instant" >
+       <field id="h"       standard_name="land_ice_thickness" unit="m" grid_ref="GridNodes"  />
+       <field id="zs"      standard_name="surface_altitude"   unit="m"  grid_ref="GridNodes" comment="The altitude or surface elevation of the ice sheet wrt geoid EIGEN-6C4 (positive up)" />
+       <field id="zb"      standard_name="base_altitude"      unit="m"  grid_ref="GridNodes" comment="The altitude of the lower ice surface elevation of the ice sheet wrt geoid EIGEN-6C4 (positive up)" />
+       <field id="haf"      standard_name="heigh_above_flotation" unit="m"  grid_ref="GridNodes" />
+       <field id="bedrock"      standard_name="bedrock_altitude" unit="m"  grid_ref="GridNodes" comment="The bedrock topography wrt geoid EIGEN-6C4 (positive up)" />
+       <field id="groundedmask" unit="1" grid_ref="GridNodes" />
+       <field id="ssavelocity 1"      standard_name="land_ice_vertical_mean_x_velocity"             unit="m d-1" grid_ref="GridNodes" />
+       <field id="ssavelocity 2"      standard_name="land_ice_vertical_mean_y_velocity"             unit="m d-1" grid_ref="GridNodes" />
+       <field id="mueta2" long_name="ssa_mean_viscosity" unit="MPa a1/3"  grid_ref="GridNodes" />
+      </field_group>
+    
+       <field_group id="mesh_info2" operation= "instant" >
+          <field id="node_x" name="x" standard_name="projection_x_coordinate" unit="m" grid_ref="GridNodes" />
+          <field id="node_y" name="y" standard_name="projection_y_coordinate" unit="m" grid_ref="GridNodes" />
+          <field id="cell_area" name="cell_area" unit="m2" grid_ref="GridCells" />
+       </field_group>
+          
+       <field_group id="ExcludeArea" operation="instant" >
+          <field id="regionnumber" grid_ref="GridCells" />
+          <field id="regionarea"   grid_ref="GridCells" />
+          <field id="regionnoe"    grid_ref="GridCells" />
+       </field_group>
+   </field_definition>
+
+
+<!-- ============== FILE DEFINITION =========================== -->
+<file_definition type="one_file" >
+
+<!-- RESTART OUTPUT (instant) -->
+      <file_group id="file01" output_freq="1ts">
+      <file id="elmer_restart" name="restart_pp" convention="UGRID" time_counter_name="time" time_counter="instant" time_units="days" >
+              <field_group prec="8" group_ref="mesh_info2" />
+              <field_group prec="8" operation="instant">
+                  <field field_ref="ssavelocity 1"  />
+                  <field field_ref="ssavelocity 2"  />
+                  <field field_ref="h"              />
+                  <field field_ref="zs"             />
+                  <field field_ref="zb"             />
+                  <field field_ref="haf"            />
+                  <field field_ref="bedrock"        />
+                  <field field_ref="groundedmask"   />
+                  <field field_ref="mueta2"         />
+              </field_group>
+              <variable id="elmerversion" name="model_version" type="string"> elmer ice v9.0</variable>
+      </file>
+      <file id="elmer_excludeArea" name="output_pp" convention="UGRID" time_counter_name="time" time_counter="instant" time_units="days" >
+              <field_group prec="8" group_ref="mesh_info2" />
+              <field_group prec="8" group_ref="ExcludeArea" />
+      </file>
+     </file_group>
+</file_definition>
+
+<!-- ============== DOMAIN DEFINITION =========================== -->
+    <domain_definition>
+      <!-- mandatory domains ...  -->
+      <domain id="cells" name="mesh2D"/>
+      <domain id="edges" name="mesh2D"/>
+      <domain id="nodes" name="mesh2D"/>
+      <!-- ...  -->
+    </domain_definition>
+
+<!-- ============== GRID DEFINITION =========================== -->
+    <grid_definition>
+
+      <!-- mandatory grids... -->
+      <grid id="GridCells">
+        <domain domain_ref="cells"/>
+      </grid>
+
+      <grid id="GridNodes">
+        <domain domain_ref="nodes"/>
+      </grid>
+
+      <grid id="GridEdges">
+        <domain domain_ref="edges"/>
+      </grid>
+      <!-- ...  -->
+
+    </grid_definition>
+
+</context>

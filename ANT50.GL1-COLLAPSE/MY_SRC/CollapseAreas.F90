@@ -3,7 +3,7 @@
 ! *  CollapseAreas_Parallel: connected shelf regions + fracture ratio collapse
 ! *
 ! *****************************************************************************/
-      SUBROUTINE CollapseAreas_Parallel(Model,Solver,dt,TransientSimulation)
+      SUBROUTINE CollapseAreas(Model,Solver,dt,TransientSimulation)
       USE DefUtils
       USE ConnectedAreas
       IMPLICIT NONE
@@ -15,19 +15,24 @@
 
       TYPE(Region_t), ALLOCATABLE :: RegionsStat(:), UniqueRegions(:)
       TYPE(Variable_t), POINTER :: RegionLabels, RegionTagVar, FractureMaskVar, CollapseMaskVar, RegionRatioVar
+      TYPE(Variable_t), POINTER :: HVar
       TYPE(Variable_t), POINTER :: GroundedMaskVar, GroundedMaskElemVar
       TYPE(Mesh_t), POINTER :: Mesh
       TYPE(Element_t), POINTER :: Element
       TYPE(GaussIntegrationPoints_t) :: IP
       TYPE(Nodes_t), SAVE :: Nodes
       TYPE(ValueList_t), POINTER :: SolverParams
+      TYPE(ValueList_t), POINTER :: BodyForce, Material
       REAL(KIND=dp), ALLOCATABLE :: Basis(:), dBasisdx(:,:), ddBasisddx(:,:,:)
+      REAL(KIND=dp), ALLOCATABLE :: MinHLocal(:)
+      LOGICAL, ALLOCATABLE :: NodeUpdated(:)
       REAL(KIND=dp), ALLOCATABLE :: RegionFractureArea(:), RegionRatio(:)
       LOGICAL, ALLOCATABLE :: RegionCollapse(:)
       REAL(KIND=dp) :: detJ, s
       REAL(KIND=dp) :: collapse_ratio, min_shelf_area
       REAL(KIND=dp) :: groundedmask_threshold
       REAL(KIND=dp) :: shelf_area, fracture_area, ratio
+      REAL(KIND=dp) :: collapse_h_factor, collapse_h_minimum
       REAL(KIND=dp) :: gmask_sum
       REAL(KIND=dp) :: gmin, gmax
       REAL(Kind=dp) ::  largest,smallest
@@ -36,12 +41,15 @@
       INTEGER :: nMaskElems
       INTEGER :: nSize
       INTEGER :: NOFActive
-      LOGICAL :: Found, SAVE_REGIONS, stat
+      LOGICAL :: Found, SAVE_REGIONS, stat, GotIt
+      LOGICAL :: collapse_h_use, collapse_h_is_passive, collapse_h_is_minimum, collapse_h_is_factor
+      LOGICAL :: collapse_h_minimum_found
       LOGICAL :: FractureElemental
       CHARACTER(LEN=MAX_NAME_LEN) :: SolverName = 'CollapseAreas_Parallel'
-      CHARACTER(LEN=MAX_NAME_LEN) :: RegionVarName, RegionElemVarName, RegionLabelVarName
+      CHARACTER(LEN=MAX_NAME_LEN) :: RegionVarName, RegionElemVarName, RegionLabelVarName, HVarname
       CHARACTER(LEN=MAX_NAME_LEN) :: FractureVarName, CollapseVarName, GroundedMaskVarName
       CHARACTER(LEN=MAX_NAME_LEN) :: FName, filename, GroundedMaskElemVarName
+      CHARACTER(LEN=MAX_NAME_LEN) :: CollapseHMode
       CHARACTER(LEN=MAX_NAME_LEN),PARAMETER :: VarName="RegionLabels"
       TYPE(Variable_t),POINTER :: Var
       REAL(KIND=dp), POINTER :: Values(:)
@@ -50,6 +58,9 @@
       SolverParams => GetSolverParams()
       nSize= Mesh % NumberOfBulkElements
 
+      ! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      ! Parameters for the collapse of connected regions based on the fracture area
+      !
       ! Define a ratio for the collapse of connected regions based on the fracture area
       collapse_ratio = ListGetCReal(SolverParams,'Collapse Ratio',Found)
       IF (.NOT.Found) collapse_ratio = 0.5_dp
@@ -62,6 +73,7 @@
       groundedmask_threshold = ListGetCReal(SolverParams,'GroundedMask Threshold',Found)
       IF (.NOT.Found) groundedmask_threshold = 0._dp
 
+      ! Some variable names
       GroundedMaskVarName = ListGetString(SolverParams,'GroundedMask Variable',Found)
       IF (.NOT.Found) GroundedMaskVarName = 'GroundedMask'
       GroundedMaskElemVarName = TRIM(GroundedMaskVarName)//'_Elem'
@@ -73,9 +85,47 @@
       CollapseVarName = ListGetString(SolverParams,'Collapse Variable',Found)
       IF (.NOT.Found) CollapseVarName = 'CollapseMask'
 
+      HVarname = ListGetString(SolverParams,'Thickness Variable',Found)
+      IF (.NOT.Found) THEN
+         HVarname = 'H'
+         CALL INFO(SolverName,'Thickness Variable Name not set, using '//TRIM(HVarname),level=3)
+      END IF
+
+
+      CollapseHMode = ListGetString(SolverParams,'Collapse Thickness Mode',Found)
+      IF (.NOT.Found) CollapseHMode = 'none'
+
+      collapse_h_factor = ListGetCReal(SolverParams,'Collapse Thickness Factor',Found)
+      IF (.NOT.Found) collapse_h_factor = 0.5_dp
+
+      collapse_h_minimum = ListGetCReal(SolverParams,'Collapse Min Thickness',Found)
+      collapse_h_minimum_found = Found
+
+      collapse_h_is_passive = (TRIM(CollapseHMode).EQ.'passive')
+      collapse_h_is_minimum = (TRIM(CollapseHMode).EQ.'minimum')
+      collapse_h_is_factor  = (TRIM(CollapseHMode).EQ.'factor')
+
+      collapse_h_use = .FALSE.
+      IF (TRIM(CollapseHMode).EQ.'none') THEN
+         collapse_h_use = .FALSE.
+      ELSE IF (collapse_h_is_passive) THEN
+         collapse_h_use = .FALSE.
+      ELSE IF (collapse_h_is_minimum .OR. collapse_h_is_factor) THEN
+         collapse_h_use = .TRUE.
+      ELSE
+         CALL FATAL(SolverName,'Collapse Thickness Mode should be one of: none, passive, minimum, factor')
+      END IF
+
+      IF (collapse_h_is_factor) THEN
+         IF (collapse_h_factor.LE.0._dp .OR. collapse_h_factor.GT.1._dp) THEN
+            CALL FATAL(SolverName,'Collapse Thickness Factor should be in ]0,1]')
+         END IF
+      END IF
+
       n = MAX(Mesh % MaxElementNodes,Mesh % MaxElementDOFs)
       ALLOCATE(Basis(n), dBasisdx(n,3), ddBasisddx(n,3,3))
       ALLOCATE(Nodes%x(n),Nodes%y(n),Nodes%z(n))
+      ALLOCATE(MinHLocal(n))
 
 
       ! Get the grounded mask variable and produce its elemental version if it is nodal
@@ -214,6 +264,16 @@
       IF (RegionRatioVar%TYPE.NE.Variable_on_elements) &
          CALL FATAL(SolverName,'RegionRatio should be on_elements')
 
+      IF (collapse_h_use) THEN
+         HVar => VariableGet(Mesh % Variables, HVarname,UnfoundFatal=.TRUE.)
+         IF (.NOT.ASSOCIATED(HVar%Perm)) &
+            CALL FATAL(SolverName,'H has no valid permutation')
+         IF (HVar%TYPE.NE.Variable_on_nodes) &
+            CALL FATAL(SolverName,'H should be on_nodes')
+         ALLOCATE(NodeUpdated(SIZE(HVar%Perm)))
+         NodeUpdated = .FALSE.
+      END IF
+
       print*, "Retrieved CollapseMaskVar: ", TRIM(CollapseVarName)
 
       ALLOCATE(RegionFractureArea(nTags),RegionRatio(nTags),RegionCollapse(nTags))
@@ -301,6 +361,46 @@
          IF (RegionRatioVar % Perm(EIndex) <= 0) CYCLE
          IF (RegionCollapse(region)) THEN
             CollapseMaskVar % Values(CollapseMaskVar % Perm(EIndex)) = 1._dp
+
+            IF (collapse_h_use) THEN
+               n = GetElementNOFNodes(Element)
+
+               IF (collapse_h_is_minimum) THEN
+                  IF (collapse_h_minimum_found) THEN
+                     MinHLocal(1:n) = collapse_h_minimum
+                  ELSE
+                     BodyForce => GetBodyForce(Element)
+                     Material => GetMaterial(Element)
+                     MinHLocal(1:n) = ListGetConstReal(BodyForce,'H Lower Limit',GotIt)
+                     IF (.NOT.GotIt) MinHLocal(1:n) = ListGetConstReal(Material,'Min H',GotIt)
+                     IF (.NOT.GotIt) CALL FATAL(SolverName, &
+                        & 'Collapse Mode=minimum requires Collapse Min Thickness or local H lower limit')
+                  END IF
+               END IF
+
+               DO i=1,n
+                  node = Element % NodeIndexes(i)
+                  IF (node.LE.0) CYCLE
+                  IF (node.GT.SIZE(HVar%Perm)) CYCLE
+
+                  knode = HVar % Perm(node)
+                  IF (knode.LE.0) CYCLE
+                  IF (knode.GT.SIZE(NodeUpdated)) CYCLE
+                  IF (NodeUpdated(knode)) CYCLE
+
+                  IF (collapse_h_is_minimum) THEN
+                     HVar % Values(knode) = MinHLocal(i)
+                  ELSE IF (collapse_h_is_factor) THEN
+                     HVar % Values(knode) = collapse_h_factor * HVar % Values(knode)
+                     ! Still enforce a minimum thickness if specified
+                     IF (HVar % Values(knode) < 1.0_dp) THEN
+                        HVar % Values(knode) = 1.0_dp
+                     END IF
+                  END IF
+
+                  NodeUpdated(knode) = .TRUE.
+               END DO
+            END IF
          ELSE
             CollapseMaskVar % Values(CollapseMaskVar % Perm(EIndex)) = 0._dp
          END IF
@@ -319,7 +419,6 @@
             fracture_area = RegionFractureArea(region)
             ratio = 0._dp
             IF (shelf_area > 0._dp) ratio = fracture_area / shelf_area
-            !write(12,*) region, UniqueRegions(region)%Tag, UniqueRegions(region)%NoE, shelf_area, fracture_area, ratio, RegionCollapse(region)
          END DO
          CLOSE(12)
       END IF
@@ -327,5 +426,7 @@
       DEALLOCATE(RegionFractureArea,RegionRatio,RegionCollapse)
       DEALLOCATE(Basis,dBasisdx,ddBasisddx)
       DEALLOCATE(Nodes%x,Nodes%y,Nodes%z)
+      DEALLOCATE(MinHLocal)
+      IF (collapse_h_use) DEALLOCATE(NodeUpdated)
 
-      END SUBROUTINE CollapseAreas_Parallel
+      END SUBROUTINE CollapseAreas

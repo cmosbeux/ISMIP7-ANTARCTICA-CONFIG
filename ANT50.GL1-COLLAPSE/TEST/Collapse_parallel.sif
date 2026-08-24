@@ -40,15 +40,11 @@ End
 !#####
 Body Force 1
 
-  ! GroundedMask Areas that can be compare with the fracture mask areas
-  !CollapseMask Passive  = Equals "GroundedMask"
+ ! Thickness to 1 meter if collapse
+ !h = Variable CollapseMask
+ !   REAL LUA "h "
 
-  !FractureArea Passive = Variable "Fracture_Mask"
-  !   Real MATC "-tx+1"
 
-  ! This defines the passive condition as collapse mask areas located on floating ice shelves
-  !FractureArea Passive = Variable "Fracture_Mask"
-  !   Real Procedure "passive_cond" "passive_grounded_fracture"
 End
 !#####
 Material 1
@@ -63,7 +59,7 @@ Solver 1
   Equation = Eq1
   Procedure = "ElmerIceSolvers" "UGridDataReader"
 
-  File Name = File "MSH/restart_000.nc"
+  File Name = File "MSH.P2/restart_000.nc"
 
   Time Index = Integer -1
 
@@ -100,7 +96,7 @@ Solver 2
    Is Time Counter = Logical True
    Time Counter start = Integer 1
 
-   File Name = File "../UGRID_Fracture/Fracture_Mask_2000-2299.nc"
+   File Name = File "./UGRID_Fracture/Fracture_Mask_2000-2299.nc"
    Variable Name 1 = File "fracture_mask"
    Exported Variable 1 = -elem fracture_mask
    Update Exported Variables = Logical True
@@ -119,11 +115,25 @@ Solver 3
   Collapse Ratio = Real 0.6
   Shelf Lower Limit for Collapse = Real 2e7
 
+  ! Optional thickness update in collapsed regions:
+  ! none | passive | minimum | factor
+  Collapse Thickness Mode = String "factor"
+  Collapse Thickness Factor = Real 0.8
+  ! Collapse Min Thickness = Real 1.0
+
   File Name = File "output_collapse.txt"
 End
 
 
 Solver 4
+  Equation = "Dumy"
+  procedure = "ElmerIceSolvers" "UpdateExport"
+  variable = -nooutput  dumy2
+
+  Exported Variable 1 = -dofs 1 h
+End
+
+Solver 5
   Exec Solver = String "after saving"
   Equation = String "ResultOutput"
   Procedure = File "ResultOutputSolve" "ResultOutputSolver"
@@ -136,7 +146,7 @@ End
 
 !#####
 Equation 1
-  Active Solvers(4)= 1 2 3 4
+  Active Solvers(4)= 1 2 3 4 5
 End
 
 !#####

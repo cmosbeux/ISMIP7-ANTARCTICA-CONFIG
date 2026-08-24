@@ -1,0 +1,92 @@
+<?xml version="1.0"?>
+
+    <file_definition type="one_file" >
+
+<!-- RESTART OUTPUT (instant) -->
+      <file_group id="file01" output_freq="<TIME_RST>d">
+      <file id="elmer_restart" name="restart" convention="UGRID" time_counter_name="time" time_counter="instant" time_units="days" >
+              <field_group group_ref="mesh_info2" />
+              <field_group prec="8" operation="instant">
+		  <field field_ref="ssavelocity 1"  />
+		  <field field_ref="ssavelocity 2"  />
+                  <field field_ref="h"              />
+                  <field field_ref="zs"             />
+                  <field field_ref="zb"             />
+                  <field field_ref="haf"            />
+                  <field field_ref="bedrock"        />
+                  <field field_ref="groundedmask"   />
+                  <field field_ref="beta_1"         />
+                  <field field_ref="beta_3"         />
+                  <field field_ref="beta_5"         />
+                  <field field_ref="beta_cr"         />
+                  <field field_ref="mueta2"         />
+	          <field field_ref="ceff"           />
+              </field_group>
+              <variable id="elmerversion" name="model_version" type="string"> elmer ice v9.0</variable>
+      </file>
+      <file id="elmer_restart_time" name="restart_time" time_counter_name="time" time_counter="instant" time_units="days" >
+	      <field_group group_ref="elmer_global"/>
+      </file>
+      </file_group>
+
+<!-- INTEGRATED OUTPUT (instant) -->
+      <file_group id="file10" output_freq="1y" >
+      <file id="elmer_scalars" name="elmer_scalars" time_counter_name="time" time_counter="instant" time_units="days" >
+	      <field_group group_ref="elmer_global" />
+              <field_group prec="8" operation="instant">
+	         <field name="domain_area" unit="m2"     field_ref="cell_area"       grid_ref="ScalarGrid_sum" />
+	         <field name="volume"      unit="m3"     field_ref="h_elem"          grid_ref="ScalarGrid_sum" > this*cell_area </field>
+	         <field name="dvdt"        unit="m3 d-1" field_ref="h velocity_elem" grid_ref="ScalarGrid_sum" > this*cell_area </field>
+	         <field name="smb_int"     unit="m3 d-1" field_ref="acabf"           grid_ref="ScalarGrid_sum" > this*cell_area </field>
+	         <field name="bmb_int"     unit="m3 d-1" field_ref="libmassbf"       grid_ref="ScalarGrid_sum" > this*cell_area </field>
+	         <field name="melt_int"    unit="m3 d-1" field_ref="melt"            grid_ref="ScalarGrid_sum" > this*cell_area </field>
+	         <field name="loads"       unit="m3 d-1" field_ref="h loads"         grid_ref="ScalarGrid_sum" />
+	         <field name="dhdt_max"    unit="m d-1"  field_ref="h velocity"      grid_ref="ScalarGrid_max" />
+	         <field name="dhdt_min"    unit="m d-1"  field_ref="h velocity"      grid_ref="ScalarGrid_min" />
+      	         <field name="v_max"       unit="m d-1"  field_ref="vnorm"           grid_ref="ScalarGrid_max" />
+              </field_group>
+      </file>
+
+      <file id="elmer_debug" name="elmer_debug" convention="UGRID" time_counter_name="time" time_counter="instant" time_units="days" >
+	      <field_group group_ref="mesh_info2" />
+	      <field name="dhdt_max"  field_ref="h velocity" operation="maximum" />
+	      <field name="dhdt_min"  field_ref="h velocity" operation="minimum" />
+	      <field name="dhdt_mean" field_ref="h velocity" operation="average" />
+              <field name="dhdt"      field_ref="h velocity" />
+	      <field name="vmin"      field_ref="vnorm" operation="minimum" />
+	      <field name="vmax"      field_ref="vnorm" operation="maximum" />
+              <field name="vmean"     field_ref="vnorm" operation="average" />
+              <field name="vnorm"     field_ref="vnorm" />
+              <field name="smb"       field_ref="smb" />
+              <field name="asmb"      field_ref="asmb" />
+              <field name="melt"      field_ref="melt" />
+      </file>
+
+      </file_group>
+
+<!-- ISMIP6 OUTPUTS -->
+      <file_group id="file20" output_freq="1y" >
+         <file id="state" name="ismip6_states" convention="UGRID" time_counter_name="time" time_counter="instant" time_units="days" >
+	      <field_group group_ref="mesh_info2" />
+	      <field_group group_ref="ismip6_2D_state"  />
+	      <variable id="elmerversion" name="model_version"       type="string"> elmer ice v9.0</variable>
+              <variable id="altitude"     name="altitude_convention" type="string"> altitude reference against geoid EIGEN-6C4 </variable>
+              <variable id="mapping"      name="projection"          type="string"> espg:3031 </variable>
+         </file>
+         <file id="flux" name="ismip6_fluxes" convention="UGRID" time_counter_name="time" time_counter="centered" time_units="days" >
+	      <field_group group_ref="mesh_info2" />
+	      <field_group group_ref="ismip6_2D_flux" />
+	      <variable id="elmerversion" name="model_version" type="string"> elmer ice v9.0</variable>
+              <variable id="mapping"      name="projection"    type="string"> espg:3031 </variable>
+         </file>     
+         <file id="scalar" name="ismip6_scalars"  time_counter_name="time" time_counter="instant" time_units="days" >
+              <field_group group_ref="ismip6_1D" />
+              <variable id="elmerversion" name="model_version" type="string"> elmer ice v9.0</variable>
+         </file>
+         <file id="scalar_true_cell_area" name="ismip6_scalars_true_cell_area"  time_counter_name="time" time_counter="instant" time_units="days" >
+              <field_group group_ref="ismip6_1D_true_cell_area" />
+              <variable id="elmerversion" name="model_version" type="string"> elmer ice v9.0</variable>
+         </file>
+      </file_group>
+
+    </file_definition>
