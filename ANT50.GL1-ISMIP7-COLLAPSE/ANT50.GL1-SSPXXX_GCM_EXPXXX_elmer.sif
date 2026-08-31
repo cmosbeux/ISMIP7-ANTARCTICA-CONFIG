@@ -327,6 +327,8 @@ Solver 7
   ! Collapse Min Thickness = Real 1.0
 
   File Name = File "output_collapse.txt"
+
+  Exported Variable = -dofs 1 H
 End
 
 Solver 8
@@ -518,7 +520,7 @@ Solver 11
     Flow Solution Name = String "SSAVelocity"
 
   ! secondary variables (output): averaged surface and basal mass balance
-  Compute averaved mass balances = Logical True
+   Compute averaged mass balances = Logical True
 
   Exported Variable 1 = -elem acabf
   Exported Variable 2 = -elem libmassbf

@@ -495,7 +495,7 @@ Solver 9
     Flow Solution Name = String "SSAVelocity"
 
   ! secondary variables (output): averaged surface and basal mass balance
-  Compute averaved mass balances = Logical True
+   Compute averaged mass balances = Logical True
 
   Exported Variable 1 = -elem acabf
   Exported Variable 2 = -elem libmassbf

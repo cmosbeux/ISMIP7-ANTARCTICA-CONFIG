@@ -80,6 +80,10 @@ Solver 1
    Variable Name 8  = File "bedrock"
    Variable Name 9  = File "mueta2"
 
+   !# Time
+   Variable Name 10 = File "elmer_time"
+   Target Variable 10 = String "time"
+
 !# Export Constant inputs to feed next restart
    Exported Variable 1 = bedrock
    Exported Variable 2 = mueta2
@@ -94,7 +98,7 @@ Solver 2
    Procedure = "ElmerIceSolvers" "UGridDataReader"
 
    Is Time Counter = Logical True
-   Time Counter start = Integer 1
+   Time Counter start = Integer 50
 
    File Name = File "./UGRID_Fracture/Fracture_Mask_2000-2299.nc"
    Variable Name 1 = File "fracture_mask"
@@ -122,6 +126,8 @@ Solver 3
   ! Collapse Min Thickness = Real 1.0
 
   File Name = File "output_collapse.txt"
+  
+  Exported Variable 1 = -dofs 1 h
 End
 
 
@@ -130,7 +136,7 @@ Solver 4
   procedure = "ElmerIceSolvers" "UpdateExport"
   variable = -nooutput  dumy2
 
-  Exported Variable 1 = -dofs 1 h
+  !Exported Variable 1 = -dofs 1 h
 End
 
 Solver 5
