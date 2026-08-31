@@ -158,7 +158,7 @@ End
 Solver 1
    Exec Solver = Before Simulation
    Equation = "UGridDataReader"
-   Procedure = "ElmerIceSolvers" "UGridDataReader"
+   Procedure = "UGridDataReader" "UGridDataReader"
 
    File Name = File "MSH/restart_$idm1$.nc"
 
@@ -212,7 +212,7 @@ End
 Solver 2
    Exec Solver = Before Simulation
    Equation = "UGridDataReader_cellarea"
-   Procedure = "ElmerIceSolvers" "UGridDataReader"
+   Procedure = "UGridDataReader" "UGridDataReader"
 
    File Name = File "$data_dir$/$truecellarea$"
 
@@ -286,7 +286,7 @@ Solver 5
    Exec Solver = Before simulation
 
    Equation = "SMBref_DataReader"
-   Procedure = "ElmerIceSolvers" "UGridDataReader"
+   Procedure = "UGridDataReader" "UGridDataReader"
 
    File Name = File "$data_dir$/$file_smb$"
    Variable Name 1 = File "smb"
@@ -296,7 +296,7 @@ End
 Solver 6
   Exec Solver= Before Timestep
    Equation = "Fracture_mask_reader"
-   Procedure = "ElmerIceSolvers" "UGridDataReader"
+   Procedure = "UGridDataReader" "UGridDataReader"
 
    Is Time Counter = Logical True
    Time Counter start = Integer 1

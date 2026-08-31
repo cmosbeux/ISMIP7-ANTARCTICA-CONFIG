@@ -158,7 +158,10 @@ End
 Solver 1
    Exec Solver = Before Simulation
    Equation = "UGridDataReader"
-   Procedure = "ElmerIceSolvers" "UGridDataReader"
+   ! Call local UGridDataReader implementation (recent intialisation problem solved in ElmerIce branch only)
+   ! Using the ElmerIceSolvers distrib can lead to seg fault when using "Target Variable 11 = String time" 
+   ! ok if version post August 31.08.2026
+   Procedure = "UGridDataReader" "UGridDataReader"
 
    File Name = File "MSH/restart_$idm1$.nc"
 
@@ -212,7 +215,7 @@ End
 Solver 2
    Exec Solver = Before Simulation
    Equation = "UGridDataReader_cellarea"
-   Procedure = "ElmerIceSolvers" "UGridDataReader"
+   Procedure = "UGridDataReader" "UGridDataReader"
 
    File Name = File "$data_dir$/$truecellarea$"
 
@@ -286,7 +289,7 @@ Solver 5
    Exec Solver = Before simulation
 
    Equation = "SMBref_DataReader"
-   Procedure = "ElmerIceSolvers" "UGridDataReader"
+   Procedure = "UGridDataReader" "UGridDataReader"
 
    File Name = File "$data_dir$/$file_smb$"
    Variable Name 1 = File "smb"
