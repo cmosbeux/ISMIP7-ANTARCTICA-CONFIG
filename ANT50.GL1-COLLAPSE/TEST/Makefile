@@ -1,6 +1,6 @@
-n=2
+n=32
 mesh_name = MSH
-mesh_output = MSH.P$n
+mesh_output = MSH
 
 compile:
 	elmerf90 ../MY_SRC/GetConnectedAreas.F90 -o GetConnectedAreas
@@ -16,7 +16,8 @@ run_p1:
 run_parallel:
 	mpirun -np $(n) ElmerSolver Collapse_parallel.sif
 mesh:
-	ElmerGrid 2 2 "$(mesh_output)" -partdual -metiskway "$(n)" -halo -autoclean
+	# -halogreedy instead of -halo: needed so connected regions split by a partition boundary via a single shared node aren't wrongly disconnected
+	ElmerGrid 2 2 "$(mesh_output)" -partdual -metiskway "$(n)" -halogreedy -autoclean
 clean:
 	rm -f output_collapse.txt*
 links:
@@ -24,6 +25,7 @@ links:
 	ln -s ../../../COLLAPSE-DATA/VTUs_Outputs
 	ln -s ../../../COLLAPSE-DATA/MSH/MSH.P2
 	ln -s ../../../COLLAPSE-DATA/UGRID_Fracture
+	ln -s ../../../COLLAPSE-DATA/MSH/MSH
 del_links:
 	rm restart_ant50.gl1.init_2000-2015.nc
 	rm VTUs_Outputs
