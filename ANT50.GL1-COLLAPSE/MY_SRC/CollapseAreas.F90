@@ -27,6 +27,7 @@
       REAL(KIND=dp), ALLOCATABLE :: MinHLocal(:)
       LOGICAL, ALLOCATABLE :: NodeUpdated(:)
       REAL(KIND=dp), ALLOCATABLE :: RegionFractureArea(:), RegionRatio(:)
+      REAL(KIND=dp), ALLOCATABLE :: RegionFractureAreaGlobal(:)
       LOGICAL, ALLOCATABLE :: RegionCollapse(:)
       REAL(KIND=dp) :: detJ, s
       REAL(KIND=dp) :: collapse_ratio, min_shelf_area
@@ -38,7 +39,7 @@
       REAL(Kind=dp) ::  largest,smallest
       INTEGER :: n, nTags, t, p, region, EIndex, k, nfaces, regionTag
       INTEGER :: i, node, knode, nvalid
-      INTEGER :: nMaskElems
+      INTEGER :: nMaskElems, ierr
       INTEGER :: nSize
       INTEGER :: NOFActive
       LOGICAL :: Found, SAVE_REGIONS, stat, GotIt
@@ -274,8 +275,6 @@
          NodeUpdated = .FALSE.
       END IF
 
-      print*, "Retrieved CollapseMaskVar: ", TRIM(CollapseVarName)
-
       ALLOCATE(RegionFractureArea(nTags),RegionRatio(nTags),RegionCollapse(nTags))
       RegionFractureArea = 0._dp
       RegionRatio = 0._dp
@@ -320,6 +319,15 @@
             RegionFractureArea(region) = RegionFractureArea(region) + s
          END IF
       END DO
+
+      ! MPI reduction to sum the fracture areas across all partitions
+      IF (ParEnv % PEs > 1) THEN
+         ALLOCATE(RegionFractureAreaGlobal(nTags))
+         CALL MPI_ALLREDUCE(RegionFractureArea,RegionFractureAreaGlobal,nTags, &
+            MPI_DOUBLE,MPI_SUM,ELMER_COMM_WORLD,ierr)
+         RegionFractureArea = RegionFractureAreaGlobal
+         DEALLOCATE(RegionFractureAreaGlobal)
+      END IF
 
       ! Collapse the connected shelves based on the fracture area ratio
       DO region=1,nTags
