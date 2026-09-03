@@ -9,13 +9,17 @@ EXPXXX=<EXPXXX>
 
 # Period for ocean forcing
 #-------------------------------
-OINITIAL_DATE=185001
-OFINAL_DATE=230012
-
+OINITIAL_DATE=2015
+OFINAL_DATE=<OFINAL_DATE>
 # Period for atmospheric forcing
 #-------------------------------
 AINITIAL_DATE=2015
 AFINAL_DATE=<AFINAL_DATE>
+
+# Period for collapse forcing
+#-------------------------------
+FINITIAL_DATE=2000
+FFINAL_DATE=<FFINAL_DATE>
 
 # Simulation End
 #-------------------------------

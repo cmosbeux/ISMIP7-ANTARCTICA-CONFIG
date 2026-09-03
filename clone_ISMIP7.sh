@@ -5,9 +5,12 @@ read -p "Enter SSP (e.g., SSP126): " ssp
 read -p "Enter GCM (default CESM2-WACCM): " gcm
 gcm=${gcm:-CESM2-WACCM}
 read -p "Enter EXP (e.g., 004): " exp
-read -p "Enter FINAL YEAR (2100 or 2200): " final_year
-read -p "Enter ATMO FORCING END (default is 2200): " final_atmo_year
-final_atmo_year=${final_atmo_year:-2200}
+read -p "Enter FINAL YEAR (default is 2300): " final_year
+final_year=${final_year:-2300}
+read -p "Enter ATMO FORCING END (default is 2300): " final_atmo_year
+final_atmo_year=${final_atmo_year:-2300}
+read -p "Enter COLLAPSE FORCING END (default is 2300): " final_collapse_year
+final_collapse_year=${final_collapse_year:-2300}
 
 # Prompt user for friction law
 echo "Choose a friction law:"
@@ -106,6 +109,7 @@ sed -i "s/<FRICTION_LAW>/$friction_law/g" "$target_folder/config_case.txt"
 sed -i "s/<BETA_COEFF>/$beta_coeff/g" "$target_folder/config_case.txt"
 sed -i "s/<INITIAL_STATE_FILE>/$init_file_name/g" "$target_folder/config_case.txt"
 sed -i "s/<AFINAL_DATE>/$final_atmo_year/g" "$target_folder/config_case.txt"
+sed -i "s/<FFINAL_DATE>/$final_collapse_year/g" "$target_folder/config_case.txt"
 sed -i "s/<SIMULATION_END>/$final_year/g" "$target_folder/config_case.txt"
 
 # Print success message
