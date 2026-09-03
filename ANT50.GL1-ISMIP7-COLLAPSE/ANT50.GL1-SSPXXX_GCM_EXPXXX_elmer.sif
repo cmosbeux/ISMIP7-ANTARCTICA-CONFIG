@@ -294,44 +294,6 @@ Solver 5
 End   
 
 Solver 6
-  Exec Solver= Before Timestep
-   Equation = "Fracture_mask_reader"
-   Procedure = "UGridDataReader" "UGridDataReader"
-
-   Is Time Counter = Logical True
-   Time Counter start = Integer 1
-
-   File Name = File "$data_dir$/Fracture_Mask_2000-2299.nc"
-   Variable Name 1 = File "fracture_mask"
-   Exported Variable 1 = -elem fracture_mask
-   Update Exported Variables = Logical True
-End
-
-Solver 7
-   Exec Interval =$ 365 / <STPINDAYS>
-   Equation = "CollapseAreas"
-   Variable = -dofs 1 dummy
-   Procedure = "CollapseAreas" "CollapseAreas"
-
-   Optimize Bandwidth = False
-
-  Fracture Variable = String "fracture_mask"
-  
-  Collapse Ratio = Real 0.6
-  Shelf Lower Limit for Collapse = Real 2e7
-
-  ! Optional thickness update in collapsed regions:
-  ! none | passive | minimum | factor
-  Collapse Thickness Mode = String "factor"
-  Collapse Thickness Factor = Real 0.8
-  ! Collapse Min Thickness = Real 1.0
-
-  File Name = File "output_collapse.txt"
-
-  Exported Variable = -dofs 1 H
-End
-
-Solver 8
    Exec Interval =$ 365 / <STPINDAYS>
 
    ! SMB with anomaly
@@ -350,6 +312,22 @@ Solver 8
 
    ! allocate smb_tot and update body force
    Exported Variable 2 = -elem "smb_tot"
+   Update Exported Variables = Logical True
+End
+
+Solver 7
+   Exec Solver = Before Timestep
+   Exec Interval =$ 365 / <STPINDAYS>
+
+   Equation = "Fracture_mask_reader"
+   Procedure = "UGridDataReader" "UGridDataReader"
+
+   Is Time Counter = Logical True
+   Time Counter start = Integer <OFFSET_COLLAPSE>
+
+   File Name = File "$data_dir$/$file_collapse$"
+   Variable Name 1 = File "fracture_mask"
+   Exported Variable 1 = -elem fracture_mask
    Update Exported Variables = Logical True
 End
 
@@ -372,7 +350,7 @@ End
 !#                                 * distIF (ice shelf front)
 !#-----------------------------------------------------------------------
 
-Solver 9
+Solver 8 
   Equation = "MELT"
   Variable = -nooutput dummy
   Procedure = "Melt" "MeltSolver"
@@ -414,7 +392,7 @@ End
 !#
 !#     - comments: * Friction law defined in material section
 !#-----------------------------------------------------------------------
-Solver 10
+Solver 9
   Equation = "SSA"
   Procedure = "ElmerIceSolvers" "SSABasalSolver"
 
@@ -479,7 +457,7 @@ End
 !#                           * element averaged surface mass balance [XXX, >0 blabla](elemental)
 !#                           * element averaged basal mass balance [XXX, >0 blabla] (elemental)
 !#-----------------------------------------------------------------------
-Solver 11
+Solver 10
    Equation = "Thickness"
    Procedure = "ElmerIceSolvers" "ThicknessSolver"
 
@@ -526,6 +504,36 @@ Solver 11
   Exported Variable 2 = -elem libmassbf
     
 End
+
+
+Solver 11
+   Exec Interval =$ 365 / <STPINDAYS>
+   Equation = "CollapseAreas"
+   Variable = -dofs 1 dummy
+   Procedure = "CollapseAreas" "CollapseAreas"
+
+   Optimize Bandwidth = False
+
+  Fracture Variable = String "fracture_mask"
+  
+  Collapse Ratio = Real 0.6
+  Shelf Lower Limit for Collapse = Real 2e7
+
+  ! Optional thickness update in collapsed regions:
+  ! none | passive | minimum | factor
+  Collapse Thickness Mode = String "factor"
+  Collapse Thickness Factor = Real 0.8
+  ! Collapse Min Thickness = Real 1.0
+
+  File Name = File "output_collapse.txt"
+  
+  ! /!\ DO NOT EXPORT H HERE
+  ! H is already Solver 10's primary variable and is looked up/modified
+  ! directly by name in CollapseAreas.F90; re-declaring it here as an
+  ! Exported Variable seems to corrupt the update.
+End
+
+
 
 !#-----------------------------------------------------------------------
 !#                          FLOTATION SOLVER
@@ -659,6 +667,9 @@ Solver 13
    ! Optional
    ! SMB with anomaly
    Scalar Field 27 = String "asmb"
+
+   ! Collapsemask visible in debug file
+   Scalar Field 28 = String "collapsemask"
   
    ! Global Variables
    Global Variable 1 = String "time"
