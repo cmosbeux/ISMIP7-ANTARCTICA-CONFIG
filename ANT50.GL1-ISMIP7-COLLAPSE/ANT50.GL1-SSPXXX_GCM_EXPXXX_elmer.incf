@@ -28,6 +28,12 @@ $file_smb = "ATMOSPHERE/SMB_REF/racmo_ant50.gl1_19952014_smbice_days.nc"
 $file_asmb = "ATMOSPHERE/SMB/GCM_asmb_AINITIAL_DATE-AFINAL_DATE_sspxxx_elmer.nc"
 !
 !-----------------------------------------------------------
+! COLLAPSE files
+!-----------------------------------------------------------
+!
+$file_collapse = "COLLAPSE/GCM_Fracture_Mask_FINITIAL_DATE-AFINAL_DATE_sspxxx_elmer.nc"
+!
+!-----------------------------------------------------------
 ! Post Processing files
 !-----------------------------------------------------------
 ! define basin file (PICO basins)
