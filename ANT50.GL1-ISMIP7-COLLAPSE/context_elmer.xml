@@ -144,6 +144,7 @@
                       <field id="acabf"     standard_name="land_ice_surface_specific_mass_balance_flux" unit="m d-1"  grid_ref="GridCells" />
 		      <field id="libmassbf" standard_name="land_ice_basal_specific_mass_balance_flux"   unit="m d-1"  grid_ref="GridCells" />
 		      <field id="h loads"                                                               unit="m3 d-1" grid_ref="GridNodes" />
+		      <field id="collapsemask" long_name="shelf_collapse_mask"                          unit="-"      grid_ref="GridCells" />
 	      </field_group>
 
               <field_group id="mesh_info2" operation= "instant" >

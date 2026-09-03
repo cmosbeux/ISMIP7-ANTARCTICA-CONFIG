@@ -60,6 +60,7 @@
               <field name="smb"       field_ref="smb" />
               <field name="asmb"      field_ref="asmb" />
               <field name="melt"      field_ref="melt" />
+              <field name="collapsemask"      field_ref="collapsemask" />
       </file>
 
       </file_group>
