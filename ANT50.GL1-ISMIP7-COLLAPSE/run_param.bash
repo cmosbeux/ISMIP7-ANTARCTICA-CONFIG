@@ -19,14 +19,20 @@ WALLTIME=86400
 NSTEP=1825
 TIME_STP=5 #in days
 
+# first year of Elmer simulation
+START_SIMU=2000
+
 # first year in atmospheric forcing file / first year to read in the simulation 
 START_YEAR_FORCING=1980    
-START_SIMU=2000
 OFFSET=$((START_SIMU-START_YEAR_FORCING))
 
 # first year in oceanic forcing file / first year to read in the simulation
 START_YEAR_FORCING_OC=1850
 OFFSETOC=$((START_SIMU-START_YEAR_FORCING_OC))
+
+# first year in collapse forcing file / first year to read in the simulation
+START_YEAR_FORCING_COLLAPSE=2000
+OFFSET_COLLAPSE=$((START_SIMU-START_YEAR_FORCING_COLLAPSE))
 
 calc() { awk "BEGIN{print $*}"; }
 TIME_RST=`calc $NSTEP*$TIME_STP` # in days

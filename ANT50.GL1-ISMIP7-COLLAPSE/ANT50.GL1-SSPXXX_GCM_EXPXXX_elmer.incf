@@ -31,7 +31,7 @@ $file_asmb = "ATMOSPHERE/SMB/GCM_asmb_AINITIAL_DATE-AFINAL_DATE_sspxxx_elmer.nc"
 ! COLLAPSE files
 !-----------------------------------------------------------
 !
-$file_collapse = "COLLAPSE/GCM_Fracture_Mask_FINITIAL_DATE-AFINAL_DATE_sspxxx_elmer.nc"
+$file_collapse = "COLLAPSE/GCM_Fracture_Mask_CINITIAL_DATE-CFINAL_DATE_sspxxx_elmer.nc"
 !
 !-----------------------------------------------------------
 ! Post Processing files

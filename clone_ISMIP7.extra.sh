@@ -7,14 +7,10 @@ gcm=${gcm:-CESM2-WACCM}
 read -p "Enter EXP (e.g., 004): " exp
 read -p "Enter FINAL YEAR (default is 2300): " final_year
 final_year=${final_year:-2300}
-
-final_atmo_year=$final_year
-final_collapse_year=$final_year
-
-# read -p "Enter ATMO FORCING END (default is 2300): " final_atmo_year
-# final_atmo_year=${final_atmo_year:-2300}
-# read -p "Enter COLLAPSE FORCING END (default is 2300): " final_collapse_year
-# final_collapse_year=${final_collapse_year:-2300}
+read -p "Enter ATMO FORCING END (default is 2300): " final_atmo_year
+final_atmo_year=${final_atmo_year:-2300}
+read -p "Enter COLLAPSE FORCING END (default is 2300): " final_collapse_year
+final_collapse_year=${final_collapse_year:-2300}
 
 # Prompt user for friction law
 echo "Choose a friction law:"

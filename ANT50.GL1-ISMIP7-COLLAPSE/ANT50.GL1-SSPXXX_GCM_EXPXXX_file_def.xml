@@ -65,28 +65,28 @@
 
       </file_group>
 
-<!-- ISMIP6 OUTPUTS -->
+<!-- ISMIP7 OUTPUTS -->
       <file_group id="file20" output_freq="1y" >
-         <file id="state" name="ismip6_states" convention="UGRID" time_counter_name="time" time_counter="instant" time_units="days" >
+         <file id="state" name="ismip7_states" convention="UGRID" time_counter_name="time" time_counter="instant" time_units="days" >
 	      <field_group group_ref="mesh_info2" />
-	      <field_group group_ref="ismip6_2D_state"  />
-	      <variable id="elmerversion" name="model_version"       type="string"> elmer ice v9.0</variable>
+	      <field_group group_ref="ismip7_2D_state"  />
+	      <variable id="elmerversion" name="model_version"       type="string"> elmer ice v26.2</variable>
               <variable id="altitude"     name="altitude_convention" type="string"> altitude reference against geoid EIGEN-6C4 </variable>
               <variable id="mapping"      name="projection"          type="string"> espg:3031 </variable>
          </file>
-         <file id="flux" name="ismip6_fluxes" convention="UGRID" time_counter_name="time" time_counter="centered" time_units="days" >
+         <file id="flux" name="ismip7_fluxes" convention="UGRID" time_counter_name="time" time_counter="centered" time_units="days" >
 	      <field_group group_ref="mesh_info2" />
-	      <field_group group_ref="ismip6_2D_flux" />
-	      <variable id="elmerversion" name="model_version" type="string"> elmer ice v9.0</variable>
+	      <field_group group_ref="ismip7_2D_flux" />
+	      <variable id="elmerversion" name="model_version" type="string"> elmer ice v26.2</variable>
               <variable id="mapping"      name="projection"    type="string"> espg:3031 </variable>
          </file>     
-         <file id="scalar" name="ismip6_scalars"  time_counter_name="time" time_counter="instant" time_units="days" >
-              <field_group group_ref="ismip6_1D" />
-              <variable id="elmerversion" name="model_version" type="string"> elmer ice v9.0</variable>
+         <file id="scalar" name="ismip7_scalars"  time_counter_name="time" time_counter="instant" time_units="days" >
+              <field_group group_ref="ismip7_1D" />
+              <variable id="elmerversion" name="model_version" type="string"> elmer ice v26.2</variable>
          </file>
-         <file id="scalar_true_cell_area" name="ismip6_scalars_true_cell_area"  time_counter_name="time" time_counter="instant" time_units="days" >
-              <field_group group_ref="ismip6_1D_true_cell_area" />
-              <variable id="elmerversion" name="model_version" type="string"> elmer ice v9.0</variable>
+         <file id="scalar_true_cell_area" name="ismip7_scalars_true_cell_area"  time_counter_name="time" time_counter="instant" time_units="days" >
+              <field_group group_ref="ismip7_1D_true_cell_area" />
+              <variable id="elmerversion" name="model_version" type="string"> elmer ice v26.2</variable>
          </file>
       </file_group>
 
