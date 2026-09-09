@@ -384,6 +384,12 @@
                      IF (.NOT.GotIt) CALL FATAL(SolverName, &
                         & 'Collapse Mode=minimum requires Collapse Min Thickness or local H lower limit')
                   END IF
+               ELSE IF (collapse_h_is_factor) THEN
+                  BodyForce => GetBodyForce(Element)
+                  Material => GetMaterial(Element)
+                  MinHLocal(1:n) = ListGetConstReal(BodyForce,'H Lower Limit',GotIt)
+                  IF (.NOT.GotIt) MinHLocal(1:n) = ListGetConstReal(Material,'Min H',GotIt)
+                  IF (.NOT.GotIt) MinHLocal(1:n) = 1.0_dp
                END IF
 
                DO i=1,n
@@ -400,9 +406,9 @@
                      HVar % Values(knode) = MinHLocal(i)
                   ELSE IF (collapse_h_is_factor) THEN
                      HVar % Values(knode) = collapse_h_factor * HVar % Values(knode)
-                     ! Still enforce a minimum thickness if specified
-                     IF (HVar % Values(knode) < 1.0_dp) THEN
-                        HVar % Values(knode) = 1.0_dp
+                     ! Enforce the configured minimum thickness (Min H / H Lower Limit)
+                     IF (HVar % Values(knode) < MinHLocal(i)) THEN
+                        HVar % Values(knode) = MinHLocal(i)
                      END IF
                   END IF
 
