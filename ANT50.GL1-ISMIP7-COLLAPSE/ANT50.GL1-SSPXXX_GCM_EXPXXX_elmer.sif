@@ -124,7 +124,7 @@ Material 1
   Flux = Equals H
 
 ! Min/Max thickness for thickness and collapse solver
-  Min H = Real 1.0
+  Min H = Real $Hmin
   Max H = Real 10000.0
 
 End
@@ -410,16 +410,16 @@ Solver 9
 
   Nonlinear System Max Iterations = 50
   Nonlinear System Convergence Tolerance = 1.0e-04
-  Nonlinear System Newton After Iterations = 20 
+  Nonlinear System Newton After Iterations = 50 
   Nonlinear System Newton After Tolerance = 1.0e-04
   Nonlinear System Relaxation Factor = 1.00
-  Nonlinear System Abort Not Converged = Logical True
+  Nonlinear System Abort Not Converged = Logical False
 
   Bulk Assembly Timing = Logical True
   Linear System Timing = Logical True
   Linear System Timing Cumulative = Logical True
 
-  Steady State Convergence Tolerance = 1.0e-3
+  Steady State Convergence Tolerance = 1.0e-6
 
   ! GL subgrid element
   Sub-Element GL parameterization = Logical True
@@ -441,6 +441,7 @@ Solver 9
  ! and nodal effective friction coefficient
   Exported Variable 3 = -elem "strbasemag"
   Exported Variable 4 = "Ceff"
+  Exported Variable 5 = "h residual"
 End
 
 !#-----------------------------------------------------------------------
@@ -487,11 +488,11 @@ Solver 10
     Steady State Convergence Tolerance = 1.0e-6
 
     Stabilization Method = Stabilized
-    Transient Stabilisation = logical true
-    Apply Dirichlet = Logical TRUE
+    Transient Stabilisation = Logical True
+    Apply Dirichlet = Logical True
    
     ! get the residual
-    Calculate Loads = Logical TRUE
+    Calculate Loads = Logical True
 
 !!  the convection velocity (mean horizontal velocity)
     Flow Solution Name = String "SSAVelocity"
