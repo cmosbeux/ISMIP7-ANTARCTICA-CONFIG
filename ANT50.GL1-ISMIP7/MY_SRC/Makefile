@@ -9,13 +9,27 @@ NCLIB=-L$(NETCDFFORTRAN_LIBDIR) -L$(NETCDFC_LIBDIR) -lnetcdf -lnetcdff
 
 VPATH=$(BLD)
 
-FFLAGS=-I$(XIOS_INC) -O2 -fpe0 -ftrapuv -g -traceback
+#Test compiler and flags
+FC ?= elmerf90
 
-LIBS= Melt USF_ExitCondition FrontThickness_mask USF_CondFront USF_CondDistance SlipCoef nearestpoint GetConnectedAreas passive_cond ExcludeAreas UGridDataReader
+COMPILER := $(shell $(FC) --version 2>/dev/null | head -n 1)
+
+FFLAGS = -I$(XIOS_INC) -O2 -g
+
+ifneq ($(findstring GNU,$(COMPILER)),)
+  FFLAGS += -ffpe-trap=invalid,zero,overflow -fbacktrace
+else ifneq ($(findstring Intel,$(COMPILER)),)
+  FFLAGS += -fpe0 -traceback
+else
+  $(warning Unknown compiler: $(COMPILER))
+endif
+# FFLAGS=-I$(XIOS_INC) -O2 -fpe0 -ftrapuv -g -traceback
+# FFLAGS=-I$(XIOS_INC) -O2 -ffpe-trap=invalid,zero,overflow -fbacktrace -g
+
+
+LIBS= CollapseAreas Melt USF_ExitCondition FrontThickness_mask USF_CondFront USF_CondDistance SlipCoef nearestpoint GetConnectedAreas passive_cond ExcludeAreas UGridDataReader
 
 all: $(LIBS)
-
-#only_melt: DistanceModule.o PICO.o Melt
 
 #---------------------------------------------------
 # USR function
@@ -33,9 +47,15 @@ nearestpoint:$(SRC)/nearestpoint.F90
 #
 #---------------------------------------------------
 
+
+#---------------------------------------------------
+# COLLAPSE
+CollapseAreas: $(SRC)/ConnectedAreasUtils.F90 $(SRC)/CollapseAreas.F90
+	rm -f $(BLD)/*.mod
+	elmerf90 $^ -o $(BLD)/$@ $(FFLAGS) $(NCINC) $(NCLIB)
+
 # BMB 
 # BMB: PICO
-#
 
 Melt: $(SRC)/DistanceModule.F90 $(SRC)/PICO.F90 $(SRC)/Melt.F90
 	rm -f $(BLD)/*.mod
