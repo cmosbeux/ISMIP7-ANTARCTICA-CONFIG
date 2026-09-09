@@ -488,8 +488,8 @@ Solver 10
 
     Stabilization Method = Stabilized
     Transient Stabilisation = logical true
-    Apply Dirichlet = Logical FALSE
-    Apply Limiter = Logical TRUE
+    Apply Dirichlet = Logical TRUE
+   
     ! get the residual
     Calculate Loads = Logical TRUE
 
@@ -532,20 +532,6 @@ Solver 11
   ! Exported Variable seems to corrupt the update.
 End
 
-!#-----------------------------------------------------------------------
-!#                          MIN H SAFETY NET
-!#-----------------------------------------------------------------------
-!# SOLVER to guarantee H >= Min H every timestep, independently of the
-!# ThicknessSolver limiter and CollapseAreas, in case sharp thickness
-!# discontinuities cause local undershoot below the configured floor.
-!#-----------------------------------------------------------------------
-Solver 12
-   Exec Solver = After Timestep
-   Equation = "EnforceMinH"
-   Variable = -nooutput dumyMinH
-   Procedure = "EnforceMinH" "EnforceMinH"
-End
-
 
 
 !#-----------------------------------------------------------------------
@@ -568,7 +554,7 @@ End
 !#                           * grounded fraction [] (elemental)
 !#                           * floating fraction [] (elemental)
 !#-----------------------------------------------------------------------
-Solver 13
+Solver 12
    Equation = "Flotation"
    Procedure = "ElmerIceSolvers" "Flotation"
 
@@ -599,7 +585,7 @@ End
 !#     - principal output  : * N/A
 !#     - optional  outputs : * N/A
 !#-----------------------------------------------------------------------
-Solver 14
+Solver 13
    Exec Solver = After Timestep
 
    Equation = "XIOSOutPutSolve"
@@ -693,7 +679,7 @@ End
 
 !################################################
 Equation 1
-  Active Solvers (14)= 1 2 3 4 5 6 7 8 9 10 11 12 13 14
+  Active Solvers (13)= 1 2 3 4 5 6 7 8 9 10 11 12 13
 End
 
 !################################################
