@@ -1,5 +1,30 @@
 #!/bin/bash
 
+
+# Define source and target paths
+source_folder="ANT50.GL1-ISMIP7-COLLAPSE"
+
+echo '                                               '
+echo '╔═════════════════════════════════════════════╗'
+echo '║      ██╗███████╗███╗   ███╗██╗██████╗       ║'
+echo '║      ██║██╔════╝████╗ ████║██║██╔══██╗      ║'
+echo '║      ██║███████╗██╔████╔██║██║██████╔╝      ║'
+echo '║      ██║╚════██║██║╚██╔╝██║██║██╔═══╝       ║'
+echo '║      ██║███████║██║ ╚═╝ ██║██║██║           ║'
+echo '║      ╚═╝╚══════╝╚═╝     ╚═╝╚═╝╚═╝           ║'
+echo '║                                             ║'
+echo '║                 ┌───────┐                   ║'
+echo '║                 └─────┐ │                   ║'
+echo '║                       │ │                   ║'
+echo '║                       │ │                   ║'
+echo '║                       │ │                   ║'
+echo '║                       └─┘                   ║'
+echo '║       ELMER/ICE CONFIGURATION CLONER        ║'
+echo '║                                             ║'
+printf '║   Source folder: %-27.27s║\n' "$source_folder "
+echo '╚═════════════════════════════════════════════╝'
+
+
 # Prompt user for input
 read -p "Enter SSP (e.g., SSP126): " ssp
 read -p "Enter GCM (default CESM2-WACCM): " gcm
@@ -8,6 +33,7 @@ read -p "Enter EXP (e.g., 004): " exp
 read -p "Enter FINAL YEAR (default is 2300): " final_year
 final_year=${final_year:-2300}
 
+final_ocean_year=$final_year
 final_atmo_year=$final_year
 final_collapse_year=$final_year
 
@@ -87,10 +113,10 @@ ssp=$(echo "$ssp" | tr '[:lower:]' '[:upper:]')
 gcm=$(echo "$gcm" | tr '[:lower:]' '[:upper:]')
 exp=$(echo "$exp" | tr '[:lower:]' '[:upper:]')
 final_year=$(echo "$final_year" | tr '[:lower:]' '[:upper:]')
+final_ocean_year=$(echo "$final_ocean_year" | tr '[:lower:]' '[:upper:]')
 final_atmo_year=$(echo "$final_atmo_year" | tr '[:lower:]' '[:upper:]')
+final_collapse_year=$(echo "$final_collapse_year" | tr '[:lower:]' '[:upper:]')
 
-# Define source and target paths
-source_folder="ANT50.GL1-ISMIP7"
 target_folder="ANT50.GL1-${ssp}_${gcm}_EXP${exp}"
 
 # Clone the folder
@@ -112,6 +138,7 @@ sed -i "s/<EXPXXX>/EXP$exp/g" "$target_folder/config_case.txt"
 sed -i "s/<FRICTION_LAW>/$friction_law/g" "$target_folder/config_case.txt"
 sed -i "s/<BETA_COEFF>/$beta_coeff/g" "$target_folder/config_case.txt"
 sed -i "s/<INITIAL_STATE_FILE>/$init_file_name/g" "$target_folder/config_case.txt"
+sed -i "s/<OFINAL_DATE>/$final_ocean_year/g" "$target_folder/config_case.txt"
 sed -i "s/<AFINAL_DATE>/$final_atmo_year/g" "$target_folder/config_case.txt"
 sed -i "s/<CFINAL_DATE>/$final_collapse_year/g" "$target_folder/config_case.txt"
 sed -i "s/<SIMULATION_END>/$final_year/g" "$target_folder/config_case.txt"
@@ -129,7 +156,7 @@ read -p "Do you want to run the simulation? (y/n): " run_simulation
 
 if [ "$run_simulation" != "n" ]; then
     # Run prepare_elmer.sh
-    jobid0 = 333 #dummy number to insure no dependency at first run
+    jobid0=333 # dummy number to ensure no dependency at first run
     . ./prepare_elmer.bash
 else
     echo "Simulation not executed. Exiting."
