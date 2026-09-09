@@ -18,8 +18,8 @@ AFINAL_DATE=<AFINAL_DATE>
 
 # Period for collapse forcing
 #-------------------------------
-FINITIAL_DATE=2000
-FFINAL_DATE=<FFINAL_DATE>
+CINITIAL_DATE=2000
+CFINAL_DATE=<CFINAL_DATE>
 
 # Simulation End
 #-------------------------------
