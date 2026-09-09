@@ -48,6 +48,10 @@ if [ -f "${NEW_PREFIX}_elmer.incf" ]; then
     sed -i "s/AINITIAL_DATE/${AINITIAL_DATE}/g" "${NEW_PREFIX}_elmer.incf"
     sed -i "s/AFINAL_DATE/${AFINAL_DATE}/g" "${NEW_PREFIX}_elmer.incf"
     echo "  Setup atmospheric forcing date over: ${AINITIAL_DATE}-${AFINAL_DATE}"
+
+    sed -i "s/CINITIAL_DATE/${CINITIAL_DATE}/g" "${NEW_PREFIX}_elmer.incf"
+    sed -i "s/CFINAL_DATE/${CFINAL_DATE}/g" "${NEW_PREFIX}_elmer.incf"
+    echo "  Setup collapse forcing date over: ${CINITIAL_DATE}-${CFINAL_DATE}"
 fi
 
 
@@ -92,4 +96,12 @@ if [ -f "${NEW_PREFIX}_elmer.param" ]; then
     echo "  PICO parameter setup to: "
     echo "	-Overturning =  ${OVERTURNING_VALUE}"
     echo "	-Heat flux =  ${HEAT_FLUX_VALUE}"
+fi
+
+
+# compile fortran source files
+module load elmerfem/elmerfem_devel_5adb8ef4d
+if [ -f "./MY_SRC/Makefile" ]; then
+    make -f ./MY_SRC/Makefile clean
+    make -f ./MY_SRC/Makefile
 fi
