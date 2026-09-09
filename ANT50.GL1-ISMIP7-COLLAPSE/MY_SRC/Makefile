@@ -27,7 +27,9 @@ endif
 # FFLAGS=-I$(XIOS_INC) -O2 -ffpe-trap=invalid,zero,overflow -fbacktrace -g
 
 
-LIBS= CollapseAreas Melt USF_ExitCondition FrontThickness_mask USF_CondFront USF_CondDistance SlipCoef SlipCoef_Limiter nearestpoint GetConnectedAreas passive_cond ExcludeAreas UGridDataReader
+LIBS= CollapseAreas Melt USF_ExitCondition FrontThickness_mask USF_CondFront USF_CondDistance SlipCoef \
+		SlipCoef_Limiter nearestpoint GetConnectedAreas passive_cond ExcludeAreas UGridDataReader \
+		SMB 
 
 all: $(LIBS)
 
@@ -53,6 +55,10 @@ nearestpoint:$(SRC)/nearestpoint.F90
 CollapseAreas: $(SRC)/ConnectedAreasUtils.F90 $(SRC)/CollapseAreas.F90
 	rm -f $(BLD)/*.mod
 	elmerf90 $^ -o $(BLD)/$@ $(FFLAGS) $(NCINC) $(NCLIB)
+
+#SMB
+SMB: $(SRC)/ComputedSMBSolver.F90
+	elmerf90 $(NCINC) $^ -o $(BLD)/$@ $(FFLAGS) $(NCLIB)
 
 # BMB 
 # BMB: PICO

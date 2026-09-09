@@ -309,8 +309,12 @@ Solver 6
    Variable Name 1 = File "asmb"
    Exported Variable 1 = -elem asmb
 
+   File Name 2 = File "$data_dir$/dSMBdz_file$"
+   Variable Name 2 = File "dsmbdz"
+   Exported Variable 2 = -elem dSMBdz
+
    ! allocate smb_tot and update body force
-   Exported Variable 2 = -elem "smb_tot"
+   Exported Variable 3 = -elem "smb_tot"
    Update Exported Variables = Logical True
 End
 
@@ -328,6 +332,25 @@ Solver 7
    Variable Name 1 = File "fracture_mask"
    Exported Variable 1 = -elem fracture_mask
    Update Exported Variables = Logical True
+End
+
+
+!#-----------------------------------------------------------------------
+!#            SMB/ELEVATION FEEDBACK
+!#-----------------------------------------------------------------------
+!# SOLVER to compute additionnal SMB from elevation feedback
+!#     - inputs :
+!#                * -elem "dSMBdz" : smb gradient
+!#                * "zs_ref": reference surface elevation
+!#     - output :
+!#               * -elem "dSMB" : additionnal SMB  
+!#-----------------------------------------------------------------------
+Solver 8
+   Exec Solver = Before TimeStep
+   Equation = "SMB Lapse Rate"
+   Procedure = "ComputedSMBSolver" "ComputedSMBSolver"
+
+  Exported Variable 1 = -elem "dSMB"
 End
 
 !#-----------------------------------------------------------------------
@@ -349,7 +372,7 @@ End
 !#                                 * distIF (ice shelf front)
 !#-----------------------------------------------------------------------
 
-Solver 8 
+Solver 9 
   Equation = "MELT"
   Variable = -nooutput dummy
   Procedure = "Melt" "MeltSolver"
@@ -391,7 +414,7 @@ End
 !#
 !#     - comments: * Friction law defined in material section
 !#-----------------------------------------------------------------------
-Solver 9
+Solver 10
   Equation = "SSA"
   Procedure = "ElmerIceSolvers" "SSABasalSolver"
 
@@ -457,7 +480,7 @@ End
 !#                           * element averaged surface mass balance [XXX, >0 blabla](elemental)
 !#                           * element averaged basal mass balance [XXX, >0 blabla] (elemental)
 !#-----------------------------------------------------------------------
-Solver 10
+Solver 11
    Equation = "Thickness"
    Procedure = "ElmerIceSolvers" "ThicknessSolver"
 
@@ -506,7 +529,7 @@ Solver 10
 End
 
 
-Solver 11
+Solver 12
    Exec Interval =$ 365 / <STPINDAYS>
    Equation = "CollapseAreas"
    Variable = -dofs 1 dummy
@@ -555,7 +578,7 @@ End
 !#                           * grounded fraction [] (elemental)
 !#                           * floating fraction [] (elemental)
 !#-----------------------------------------------------------------------
-Solver 12
+Solver 13
    Equation = "Flotation"
    Procedure = "ElmerIceSolvers" "Flotation"
 
@@ -586,7 +609,7 @@ End
 !#     - principal output  : * N/A
 !#     - optional  outputs : * N/A
 !#-----------------------------------------------------------------------
-Solver 13
+Solver 14
    Exec Solver = After Timestep
 
    Equation = "XIOSOutPutSolve"
