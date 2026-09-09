@@ -23,16 +23,19 @@ TIME_STP=5 #in days
 START_SIMU=2000
 
 # first year in atmospheric forcing file / first year to read in the simulation 
-START_YEAR_FORCING=1980    
+START_YEAR_FORCING=AINITIAL_DATE  
 OFFSET=$((START_SIMU-START_YEAR_FORCING))
+if [[ $OFFSET -lt 0 ]] ; then OFFSET=0 ; fi
 
 # first year in oceanic forcing file / first year to read in the simulation
-START_YEAR_FORCING_OC=1850
+START_YEAR_FORCING_OC=OINITIAL_DATE
 OFFSETOC=$((START_SIMU-START_YEAR_FORCING_OC))
+if [[ $OFFSETOC -lt 0 ]] ; then OFFSETOC=0 ; fi
 
 # first year in collapse forcing file / first year to read in the simulation
-START_YEAR_FORCING_COLLAPSE=2000
+START_YEAR_FORCING_COLLAPSE=CINITIAL_DATE
 OFFSET_COLLAPSE=$((START_SIMU-START_YEAR_FORCING_COLLAPSE))
+if [[ $OFFSET_COLLAPSE -lt 0 ]] ; then OFFSET_COLLAPSE=0 ; fi
 
 calc() { awk "BEGIN{print $*}"; }
 TIME_RST=`calc $NSTEP*$TIME_STP` # in days

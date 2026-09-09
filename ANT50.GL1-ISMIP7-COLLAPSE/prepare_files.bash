@@ -70,6 +70,15 @@ if [ -f "run_param.bash" ]; then
     else
        sed -i "s/NB_MAX_ITERATION/12/g" "run_param.bash"
     fi
+
+    sed -i "s/OINITIAL_DATE/${OINITIAL_DATE}/g" "run_param.bash"
+    sed -i "s/OFINAL_DATE/${OFINAL_DATE}/g" "run_param.bash"
+
+    sed -i "s/AINITIAL_DATE/${AINITIAL_DATE}/g" "run_param.bash"
+    sed -i "s/AFINAL_DATE/${AFINAL_DATE}/g" "run_param.bash"
+
+    sed -i "s/CINITIAL_DATE/${CINITIAL_DATE}/g" "run_param.bash"
+    sed -i "s/CFINAL_DATE/${CFINAL_DATE}/g" "run_param.bash"
 fi
 
 # include the right friction law .sif.
@@ -102,6 +111,8 @@ fi
 # compile fortran source files
 module load elmerfem/elmerfem_devel_5adb8ef4d
 if [ -f "./MY_SRC/Makefile" ]; then
-    make -f ./MY_SRC/Makefile clean
-    make -f ./MY_SRC/Makefile
+    cd ./MY_SRC
+    make -f ./Makefile clean
+    make -f ./Makefile
+    cd ..
 fi
