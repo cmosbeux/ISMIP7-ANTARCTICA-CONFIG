@@ -101,19 +101,19 @@ if [[ $RUNSTATUS == 0 ]]; then
 
    # mv data to S dir
    echo ''
-   echo "mv ismip6 output to $SELMER"
+   echo "mv ismip7 output to $SELMER"
    # fluxes
-   NCFILES=`echo "ismip6_fluxes_$CONFIG-${CASE}_${i}.nc" | tr [:upper:] [:lower:]`
+   NCFILES=`echo "ismip7_fluxes_$CONFIG-${CASE}_${i}.nc" | tr [:upper:] [:lower:]`
    mv_data_to_s $NCFILES
 
    # states
-   NCFILES=`echo "ismip6_states_$CONFIG-${CASE}_${i}.nc" | tr [:upper:] [:lower:]`
+   NCFILES=`echo "ismip7_states_$CONFIG-${CASE}_${i}.nc" | tr [:upper:] [:lower:]`
    mv_data_to_s $NCFILES
 
    # scalar
-   NCFILES=`echo "ismip6_scalars_$CONFIG-${CASE}_${i}.nc" | tr [:upper:] [:lower:]`
+   NCFILES=`echo "ismip7_scalars_$CONFIG-${CASE}_${i}.nc" | tr [:upper:] [:lower:]`
    mv_data_to_s $NCFILES
-   NCFILES=`echo "ismip6_scalars_true_cell_area_$CONFIG-${CASE}_${i}.nc" | tr [:upper:] [:lower:]`
+   NCFILES=`echo "ismip7_scalars_true_cell_area_$CONFIG-${CASE}_${i}.nc" | tr [:upper:] [:lower:]`
    mv_data_to_s $NCFILES
 
    # elmer debug

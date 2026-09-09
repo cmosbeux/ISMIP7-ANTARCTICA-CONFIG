@@ -14,59 +14,59 @@
 <!-- ============== FIELD DEFINITION =========================== -->
     <field_definition enabled=".TRUE." >
 
-      <!-- ismip6 variables  -->
-      <field_group id="ismip6" >
-	      <field_group id="ismip6_2D_state"  operation="instant">
-		      <field id="ismip6_xvelmean"   name="xvelmean"   field_ref="ssavelocity 1_elem" unit="m s-1" > this/$nsec_per_day </field> 
-		      <field id="ismip6_yvelmean"   name="yvelmean"   field_ref="ssavelocity 2_elem" unit="m s-1" > this/$nsec_per_day </field>
-		      <field id="ismip6_velmean"    name="velmean"    field_ref="ssavelocity_elem"   unit="m s-1" > this/$nsec_per_day </field>
-		      <field id="ismip6_lithk"      name="lithk"      field_ref="h_elem"  unit="m" > this*sftgif </field>
-		      <field id="ismip6_lithkaf"    name="lithkaf"    field_ref="haf_elem" unit="m" > this*sftgif </field>
-		      <field id="ismip6_orog"       name="orog"       field_ref="zs_elem" unit="m" > this*sftgif </field>
-		      <field id="ismip6_base"       name="base"       field_ref="zb_elem" unit="m" > this*sftgif </field>
-		      <field id="ismip6_strbasemag" name="strbasemag" field_ref="strbasemag"  unit="Pa"> this*sftgif*1.0e6 </field>
-		      <field id="ismip6_topg"       name="topg"       field_ref="bedrock_elem" unit="m" />
-		      <field id="ismip6_sftgif"     name="sftgif"     field_ref="sftgif"   unit="1"    />
-                      <field id="ismip6_sftgrf"     name="sftgrf"     field_ref="sftgrf"   unit="1"    />
-                      <field id="ismip6_sftflf"     name="sftflf"     field_ref="sftflf"   unit="1"    />
+      <!-- ismip7 variables  -->
+      <field_group id="ismip7" >
+	      <field_group id="ismip7_2D_state"  operation="instant">
+		      <field id="ismip7_xvelmean"   name="xvelmean"   field_ref="ssavelocity 1_elem" unit="m s-1" > this/$nsec_per_day </field> 
+		      <field id="ismip7_yvelmean"   name="yvelmean"   field_ref="ssavelocity 2_elem" unit="m s-1" > this/$nsec_per_day </field>
+		      <field id="ismip7_velmean"    name="velmean"    field_ref="ssavelocity_elem"   unit="m s-1" > this/$nsec_per_day </field>
+		      <field id="ismip7_lithk"      name="lithk"      field_ref="h_elem"  unit="m" > this*sftgif </field>
+		      <field id="ismip7_lithkaf"    name="lithkaf"    field_ref="haf_elem" unit="m" > this*sftgif </field>
+		      <field id="ismip7_orog"       name="orog"       field_ref="zs_elem" unit="m" > this*sftgif </field>
+		      <field id="ismip7_base"       name="base"       field_ref="zb_elem" unit="m" > this*sftgif </field>
+		      <field id="ismip7_strbasemag" name="strbasemag" field_ref="strbasemag"  unit="Pa"> this*sftgif*1.0e6 </field>
+		      <field id="ismip7_topg"       name="topg"       field_ref="bedrock_elem" unit="m" />
+		      <field id="ismip7_sftgif"     name="sftgif"     field_ref="sftgif"   unit="1"    />
+                      <field id="ismip7_sftgrf"     name="sftgrf"     field_ref="sftgrf"   unit="1"    />
+                      <field id="ismip7_sftflf"     name="sftflf"     field_ref="sftflf"   unit="1"    />
 	      </field_group>
 
-              <field_group id="ismip6_2D_flux" grid_ref="GridCells" operation="average">
-	              <field id="ismip6_acabf"       name="acabf"       field_ref="acabf"           unit="kg m-2 s-1" > this*sftgif*$rhoi/$nsec_per_day </field>
-                      <field id="ismip6_libmassbfgr" name="libmassbfgr" long_name="Basal mass balance flux (only beneath grounded ice)" field_ref="libmassbf"       unit="kg m-2 s-1" > libmassbf*sftgrf*$rhoi/$nsec_per_day </field>
-	              <field id="ismip6_libmassbffl" name="libmassbffl" long_name="Basal mass balance flux (only beneath floating ice)" field_ref="libmassbf"       unit="kg m-2 s-1" > libmassbf*sftflf*$rhoi/$nsec_per_day </field>
-		      <field id="ismip6_dlithkdt"    name="dlithkdt"    field_ref="h velocity_elem" unit="m s-1"      > this*sftgif/$nsec_per_day </field>
-		      <field id="ismip6_ligroundf"   name="ligroundf" long_name="Loss of grounded ice mass resulting at grounding line"  field_ref="ligroundf"       unit="kg m-2 s-1" > this*sftgif*$rhoi/$nsec_per_day </field>
-		      <field id="ismip6_lifmassbf" name="lifmassbf" unit="kg m-2 s-1" long_name="Loss of ice mass resulting from ice front melting and calving" field_ref="calving_front_flux"  > this*sftgif*$rhoi/$nsec_per_day </field>
+              <field_group id="ismip7_2D_flux" grid_ref="GridCells" operation="average">
+	              <field id="ismip7_acabf"       name="acabf"       field_ref="acabf"           unit="kg m-2 s-1" > this*sftgif*$rhoi/$nsec_per_day </field>
+                      <field id="ismip7_libmassbfgr" name="libmassbfgr" long_name="Basal mass balance flux (only beneath grounded ice)" field_ref="libmassbf"       unit="kg m-2 s-1" > libmassbf*sftgrf*$rhoi/$nsec_per_day </field>
+	              <field id="ismip7_libmassbffl" name="libmassbffl" long_name="Basal mass balance flux (only beneath floating ice)" field_ref="libmassbf"       unit="kg m-2 s-1" > libmassbf*sftflf*$rhoi/$nsec_per_day </field>
+		      <field id="ismip7_dlithkdt"    name="dlithkdt"    field_ref="h velocity_elem" unit="m s-1"      > this*sftgif/$nsec_per_day </field>
+		      <field id="ismip7_ligroundf"   name="ligroundf" long_name="Loss of grounded ice mass resulting at grounding line"  field_ref="ligroundf"       unit="kg m-2 s-1" > this*sftgif*$rhoi/$nsec_per_day </field>
+		      <field id="ismip7_lifmassbf" name="lifmassbf" unit="kg m-2 s-1" long_name="Loss of ice mass resulting from ice front melting and calving" field_ref="calving_front_flux"  > this*sftgif*$rhoi/$nsec_per_day </field>
 	      </field_group>
 
-	      <field_group id="ismip6_1D" grid_ref="ScalarGrid_sum">
-		      <field id="ismip6_lim"             name="lim"             standard_name="land_ice_mass" unit="kg" field_ref="ismip6_lithk" > this*cell_area*$rhoi </field>
-		      <field id="ismip6_limnsw"          name="limnsw"          standard_name="land_ice_mass_not_displacing_sea_water" unit="kg" field_ref="haf_elem" > this*cell_area*$rhoi </field>
-                      <field id="ismip6_iareagr"         name="iareagr"         standard_name="grounded_ice_sheet_area" unit="m2" field_ref="ismip6_sftgrf" > this*cell_area </field>
-                      <field id="ismip6_iareafl"         name="iareafl"         standard_name="floating_ice_shelf_area" unit="m2" field_ref="ismip6_sftflf" > this*cell_area </field>
-                      <field id="ismip6_tendacabf"       name="tendacabf"       standard_name="tendency_of_land_ice_mass_due_to_surface_mass_balance" unit="kg s-1" field_ref="ismip6_acabf" > this*cell_area </field>
-                      <field id="ismip6_tendlibmassbf"   name="tendlibmassbf"   standard_name="tendency_of_land_ice_mass_due_to_basal_mass_balance" unit="kg s-1" field_ref="ismip6_libmassbffl" > this*cell_area </field>
-		      <field id="ismip6_tendlibmassbffl" name="tendlibmassbffl" standard_name="tendency_of_land_ice_mass_due_to_basal_mass_balance" unit="kg s-1" field_ref="ismip6_libmassbffl" > this*cell_area </field>
-		      <field id="ismip6_tendligroundf"   name="tendligroundf"   standard_name="tendency_of_grounded_ice_mass" unit="kg s-1" field_ref="ismip6_ligroundf" > this*cell_area </field>
-		      <field id="ismip6_tendlifmassbf"   name="tendlifmassbf"   standard_name="tendency_of_land_ice_mass_due_to_calving_and_ice_front_melting" unit="kg s-1" field_ref="ismip6_lifmassbf" > this*cell_area </field>
+	      <field_group id="ismip7_1D" grid_ref="ScalarGrid_sum">
+		      <field id="ismip7_lim"             name="lim"             standard_name="land_ice_mass" unit="kg" field_ref="ismip7_lithk" > this*cell_area*$rhoi </field>
+		      <field id="ismip7_limnsw"          name="limnsw"          standard_name="land_ice_mass_not_displacing_sea_water" unit="kg" field_ref="haf_elem" > this*cell_area*$rhoi </field>
+                      <field id="ismip7_iareagr"         name="iareagr"         standard_name="grounded_ice_sheet_area" unit="m2" field_ref="ismip7_sftgrf" > this*cell_area </field>
+                      <field id="ismip7_iareafl"         name="iareafl"         standard_name="floating_ice_shelf_area" unit="m2" field_ref="ismip7_sftflf" > this*cell_area </field>
+                      <field id="ismip7_tendacabf"       name="tendacabf"       standard_name="tendency_of_land_ice_mass_due_to_surface_mass_balance" unit="kg s-1" field_ref="ismip7_acabf" > this*cell_area </field>
+                      <field id="ismip7_tendlibmassbf"   name="tendlibmassbf"   standard_name="tendency_of_land_ice_mass_due_to_basal_mass_balance" unit="kg s-1" field_ref="ismip7_libmassbffl" > this*cell_area </field>
+		      <field id="ismip7_tendlibmassbffl" name="tendlibmassbffl" standard_name="tendency_of_land_ice_mass_due_to_basal_mass_balance" unit="kg s-1" field_ref="ismip7_libmassbffl" > this*cell_area </field>
+		      <field id="ismip7_tendligroundf"   name="tendligroundf"   standard_name="tendency_of_grounded_ice_mass" unit="kg s-1" field_ref="ismip7_ligroundf" > this*cell_area </field>
+		      <field id="ismip7_tendlifmassbf"   name="tendlifmassbf"   standard_name="tendency_of_land_ice_mass_due_to_calving_and_ice_front_melting" unit="kg s-1" field_ref="ismip7_lifmassbf" > this*cell_area </field>
 	      </field_group>
 
-	      <field_group id="ismip6_1D_true_cell_area" grid_ref="ScalarGrid_sum">
-		      <field id="ismip6_lim_tca"             name="lim_tca"             standard_name="land_ice_mass" unit="kg" field_ref="ismip6_lithk"  > this*true_cell_area*$rhoi </field>
-		      <field id="ismip6_limnsw_tca"          name="limnsw_tca"          standard_name="land_ice_mass_not_displacing_sea_water" unit="kg" field_ref="haf_elem"      > this*true_cell_area*$rhoi </field>
-                      <field id="ismip6_iareagr_tca"         name="iareagr_tca"         standard_name="grounded_ice_sheet_area" unit="m2" field_ref="ismip6_sftgrf" > this*true_cell_area </field>
-                      <field id="ismip6_iareafl_tca"         name="iareafl_tca"         standard_name="floating_ice_shelf_area" unit="m2" field_ref="ismip6_sftflf" > this*true_cell_area </field>
-                      <field id="ismip6_tendacabf_tca"       name="tendacabf_tca"       standard_name="tendency_of_land_ice_mass_due_to_surface_mass_balance" unit="kg s-1" field_ref="ismip6_acabf" > this*true_cell_area </field>
-                      <field id="ismip6_tendlibmassbf_tca"   name="tendlibmassbf_tca"   standard_name="tendency_of_land_ice_mass_due_to_basal_mass_balance" unit="kg s-1" field_ref="ismip6_libmassbffl" > this*true_cell_area </field>
-		      <field id="ismip6_tendlibmassbffl_tca" name="tendlibmassbffl_tca" standard_name="tendency_of_land_ice_mass_due_to_basal_mass_balance" unit="kg s-1" field_ref="ismip6_libmassbffl" > this*true_cell_area </field>
-		      <field id="ismip6_tendligroundf_tca"   name="tendligroundf_tca"   standard_name="tendency_of_grounded_ice_mass" unit="kg s-1" field_ref="ismip6_ligroundf" > this*true_cell_area </field>
-		      <field id="ismip6_tendlifmassbf_tca"   name="tendlifmassbf_tca"   standard_name="tendency_of_land_ice_mass_due_to_calving_and_ice_front_melting" unit="kg s-1" field_ref="ismip6_lifmassbf" > this*true_cell_area </field>
+	      <field_group id="ismip7_1D_true_cell_area" grid_ref="ScalarGrid_sum">
+		      <field id="ismip7_lim_tca"             name="lim_tca"             standard_name="land_ice_mass" unit="kg" field_ref="ismip7_lithk"  > this*true_cell_area*$rhoi </field>
+		      <field id="ismip7_limnsw_tca"          name="limnsw_tca"          standard_name="land_ice_mass_not_displacing_sea_water" unit="kg" field_ref="haf_elem"      > this*true_cell_area*$rhoi </field>
+                      <field id="ismip7_iareagr_tca"         name="iareagr_tca"         standard_name="grounded_ice_sheet_area" unit="m2" field_ref="ismip7_sftgrf" > this*true_cell_area </field>
+                      <field id="ismip7_iareafl_tca"         name="iareafl_tca"         standard_name="floating_ice_shelf_area" unit="m2" field_ref="ismip7_sftflf" > this*true_cell_area </field>
+                      <field id="ismip7_tendacabf_tca"       name="tendacabf_tca"       standard_name="tendency_of_land_ice_mass_due_to_surface_mass_balance" unit="kg s-1" field_ref="ismip7_acabf" > this*true_cell_area </field>
+                      <field id="ismip7_tendlibmassbf_tca"   name="tendlibmassbf_tca"   standard_name="tendency_of_land_ice_mass_due_to_basal_mass_balance" unit="kg s-1" field_ref="ismip7_libmassbffl" > this*true_cell_area </field>
+		      <field id="ismip7_tendlibmassbffl_tca" name="tendlibmassbffl_tca" standard_name="tendency_of_land_ice_mass_due_to_basal_mass_balance" unit="kg s-1" field_ref="ismip7_libmassbffl" > this*true_cell_area </field>
+		      <field id="ismip7_tendligroundf_tca"   name="tendligroundf_tca"   standard_name="tendency_of_grounded_ice_mass" unit="kg s-1" field_ref="ismip7_ligroundf" > this*true_cell_area </field>
+		      <field id="ismip7_tendlifmassbf_tca"   name="tendlifmassbf_tca"   standard_name="tendency_of_land_ice_mass_due_to_calving_and_ice_front_melting" unit="kg s-1" field_ref="ismip7_lifmassbf" > this*true_cell_area </field>
 	      </field_group>
 
 
 
-      <!-- end: ismip6 variables  -->
+      <!-- end: ismip7 variables  -->
       </field_group>
 
       <field_group id="elmer" operation="instant" >
