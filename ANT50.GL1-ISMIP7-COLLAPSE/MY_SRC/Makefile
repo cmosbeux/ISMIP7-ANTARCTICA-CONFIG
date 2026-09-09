@@ -29,7 +29,7 @@ endif
 
 LIBS= CollapseAreas Melt USF_ExitCondition FrontThickness_mask USF_CondFront USF_CondDistance SlipCoef \
 		SlipCoef_Limiter nearestpoint GetConnectedAreas passive_cond ExcludeAreas UGridDataReader \
-		SMB 
+		SMB
 
 all: $(LIBS)
 
