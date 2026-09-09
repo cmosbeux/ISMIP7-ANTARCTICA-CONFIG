@@ -165,6 +165,7 @@ FUNCTION Calcul_Slc_reduc (model, nodenumber, VarIn) RESULT(VarOut)
    REAL(kind=dp) :: hth , slc_min, slc_max   ! Haf treshold
    REAL(kind=dp) :: slc0   ! non modified slip coeficient
    REAL (KIND=dp) :: factor ! reduction of the friction coefficient
+   LOGICAL :: Found
 
    factor = GetConstReal(Model % Constants, "slc reduction factor", Found)
    IF ( .NOT. Found) factor = 1
