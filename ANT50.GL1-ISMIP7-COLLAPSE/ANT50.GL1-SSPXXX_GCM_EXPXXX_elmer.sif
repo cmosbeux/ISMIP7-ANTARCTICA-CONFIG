@@ -104,11 +104,6 @@ Body Force 1
 
   Bottom Surface Accumulation = Equals Melt
 
-  !---------------------------------------------
-  ! Other body forces
-  !---------------------------------------------
-  ! H internal limiters (Thickness solver)
-  H Lower Limit = Real $Hmin
 End
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -127,6 +122,10 @@ Material 1
 
 !! For Save scalar to compute mass flux (=H*SSA_UV)
   Flux = Equals H
+
+! Min/Max thickness for thickness and collapse solver
+  Min H = Real 1.0
+  Max H = Real 10000.0
 
 End
 
