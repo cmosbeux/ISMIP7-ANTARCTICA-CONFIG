@@ -107,6 +107,19 @@ case $init_choice in
         ;;
 esac
 
+# Melt Parameters
+read -p "OCEAN PARAMETERIZATION (default: PICO): " ocean_param
+ocean_param=${ocean_param:-PICO}
+
+if [[ "$ocean_param" =~ ^[Pp][Ii][Cc][Oo]$ ]]; then
+    ocean_param="PICO"
+    read -p "Overturning value: " overturning
+    overturning=${overturning:-3.3e6}
+    read -p "Heat flux value: " heatflux
+    heatflux=${heatflux:-7.5e-5}  
+fi
+
+
 
 # Convert input to uppercase
 ssp=$(echo "$ssp" | tr '[:lower:]' '[:upper:]')
@@ -142,6 +155,9 @@ sed -i "s/<OFINAL_DATE>/$final_ocean_year/g" "$target_folder/config_case.txt"
 sed -i "s/<AFINAL_DATE>/$final_atmo_year/g" "$target_folder/config_case.txt"
 sed -i "s/<CFINAL_DATE>/$final_collapse_year/g" "$target_folder/config_case.txt"
 sed -i "s/<SIMULATION_END>/$final_year/g" "$target_folder/config_case.txt"
+sed -i "s/<OVERTURNING>/$overturning/g" "$target_folder/config_case.txt"
+sed -i "s/<HEAT_FLUX>/$heatflux/g" "$target_folder/config_case.txt"
+
 
 # Print success message
 echo "Folder cloned successfully: $source_folder to $target_folder"
