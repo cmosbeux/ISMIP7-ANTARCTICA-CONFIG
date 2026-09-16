@@ -91,7 +91,7 @@
       INTEGER :: NetCDFstatus
       INTEGER :: dimids(2) 
       REAL(KIND=dp), ALLOCATABLE :: Values(:)
-      REAL(KIND=dp) :: Time
+      REAL(KIND=dp) :: Time, yearinday
       INTEGER :: TimeIndex,TimePoint,TimeOffset
       INTEGER :: EIndex,NIndex,VarIndex
       LOGICAL :: Parallel,Found,VarExist
@@ -166,9 +166,12 @@
 
 
       ! get time index
+      ! - Offset for reading data :
+      TimeOffset= ListGetInteger( SolverParams, 'Time Counter start', UnFoundFatal = .FALSE. )
+      yearinday= ListGetCReal( Model % Constants, 'Calendar', UnFoundFatal = .FALSE. )
+
       VisitedTimes = VisitedTimes + 1
       IF( ListGetLogical( SolverParams, "Is Time Counter", Found ) ) THEN
-        TimeOffset=ListGetInteger( SolverParams, "Time Counter start", Found )
         IF (Found) THEN
           TimePoint = VisitedTimes + TimeOffset - 1
         ELSE
@@ -180,8 +183,9 @@
           Time = ListGetCReal( SolverParams, "Time Point", Found )
           IF (.NOT.Found) Time=GetTime()
           dt = GetTimeStepSize()
-          TimePoint = floor(time-dt/2) + 1
+          TimePoint = floor(time/yearinday-dt/yearinday/2) + 1 + TimeOffset
         END IF
+        CALL INFO(Trim(SolverName),"Use Time Index: "//I2S(TimePoint), Level=3)
       END IF
 
 
