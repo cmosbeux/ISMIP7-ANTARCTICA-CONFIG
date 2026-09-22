@@ -9,11 +9,11 @@ EXPXXX=<EXPXXX>
 
 # Period for ocean forcing
 #-------------------------------
-OINITIAL_DATE=2015
+OINITIAL_DATE=1850
 OFINAL_DATE=<OFINAL_DATE>
 # Period for atmospheric forcing
 #-------------------------------
-AINITIAL_DATE=2015
+AINITIAL_DATE=1850
 AFINAL_DATE=<AFINAL_DATE>
 
 # Period for collapse forcing
@@ -35,8 +35,8 @@ BETA_COEFF=<BETA_COEFF>
 
 # Ocean Param (PICO)
 #-------------------------------
-OVERTURNING_VALUE=2e6
-HEAT_FLUX_VALUE=5.5e-5
+OVERTURNING_VALUE=<OVERTURNING>
+HEAT_FLUX_VALUE=<HEAT_FLUX>
 
 #Initial State File
 #------------------

@@ -82,9 +82,9 @@ echo "Initial State File:"
 echo "  1) restart_ant50.gl1.init_2000-2015.nc"
 echo "  2) restart_ant50.gl1.init_2000-2015_dhdt.nc"
 echo "  3) restart_ant50.gl1.init_2000-2015_CoulombReg.nc"
-echo "  4) restart_ant50.gl1.init_2000-2015_CoulombReg_friction_corrected.nc"
-read -p "Enter the initial state you want (default is (3)): " init_choice
-init_choice=${init_choice:-3}
+echo "  4) restart_ant50.gl1.init_2000-2015_CoulombReg_beta_gradual0.1.nc"
+read -p "Enter the initial state you want (default is (4)): " init_choice
+init_choice=${init_choice:-4}
 
 
 # Determine friction law and default beta_coeff
@@ -99,7 +99,7 @@ case $init_choice in
         init_file_name="restart_ant50.gl1.init_2000-2015_CoulombReg.nc"
         ;;
     4)
-        init_file_name="restart_ant50.gl1.init_2000-2015_CoulombReg_friction_corrected.nc"
+        init_file_name="restart_ant50.gl1.init_2000-2015_CoulombReg_beta_gradual0.1.nc"
         ;;
     *)
         echo "Invalid choice. Exiting."
@@ -113,9 +113,9 @@ ocean_param=${ocean_param:-PICO}
 
 if [[ "$ocean_param" =~ ^[Pp][Ii][Cc][Oo]$ ]]; then
     ocean_param="PICO"
-    read -p "Overturning value: " overturning
+    read -p "Overturning value (default: 3.3e6): " overturning
     overturning=${overturning:-3.3e6}
-    read -p "Heat flux value: " heatflux
+    read -p "Heat flux value (default: 7.5e-5): " heatflux
     heatflux=${heatflux:-7.5e-5}  
 fi
 
