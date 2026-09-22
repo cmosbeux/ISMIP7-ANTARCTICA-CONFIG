@@ -29,7 +29,7 @@ endif
 
 LIBS= CollapseAreas Melt USF_ExitCondition FrontThickness_mask USF_CondFront USF_CondDistance SlipCoef \
 		SlipCoef_Limiter nearestpoint GetConnectedAreas passive_cond ExcludeAreas UGridDataReader \
-		SMB
+		ComputedSMBSolver
 
 all: $(LIBS)
 
@@ -57,8 +57,8 @@ CollapseAreas: $(SRC)/ConnectedAreasUtils.F90 $(SRC)/CollapseAreas.F90
 	elmerf90 $^ -o $(BLD)/$@ $(FFLAGS) $(NCINC) $(NCLIB)
 
 #SMB
-SMB: $(SRC)/ComputedSMBSolver.F90
-	elmerf90 $(NCINC) $^ -o $(BLD)/$@ $(FFLAGS) $(NCLIB)
+ComputedSMBSolver: $(SRC)/ComputedSMBSolver.F90
+        elmerf90 $^ -o $(BLD)/$@ $(FFLAGS)
 
 # BMB 
 # BMB: PICO
