@@ -7,6 +7,6 @@
   SSA Friction Threshold Height = Real $Hthres
   SSA Friction Exponent = Real $1.0/n
   SSA Friction Linear Velocity = Real $Vmin
-  SSA Friction CR Coeff Min = Real 5e-3
+  SSA Friction CR Coeff Min = Real 1e-4
   SSA Friction CR Coeff Max = Real 1e5
 

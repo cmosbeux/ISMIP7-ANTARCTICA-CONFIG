@@ -52,7 +52,7 @@ $Vmin      = 1.0e-6                           ! Velocity limiter threshold (min 
 
 $Vthres    = 300 / 365                        ! Velocity threshold u_0 (see Joughin's paper) (m.d^-1)
 
-$Hthres    = 75                               ! Thickness threshold (see Joughin's paper) (m)
+$Hthres    = 100                               ! Thickness threshold (see Joughin's paper) (m)
 
 
 !----------------------------------------------------------------------
