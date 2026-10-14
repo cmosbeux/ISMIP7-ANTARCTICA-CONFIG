@@ -1,0 +1,255 @@
+! Test SSA and Thickness Solvers for an ice shelf ramp
+!  Solutions are analytical (cf Greve. Dynamics of Ice Sheets and Glaciers, lectures note 2010, ch. 5.4)
+!-----------------------------
+! PARAMETERS:
+!----------------------------
+#NAME="Case_r1_bf1_dt0.5_min"
+!
+include PARAMETERS.sif
+!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Header
+  Mesh DB "." "rectangle_2000"
+End
+!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Constants
+  RAMP Hgl = Real #Hgl
+  RAMP Vgl = Real #V_gl
+  RAMP dhdx = Real #dhdx
+
+  RAMP RateFactor = Real #A
+  RAMP Glen = Real #n
+  RAMP rhoi = Real #rhoi
+  RAMP rhow = Real #rhow
+  RAMP gravity = Real #gravity
+
+  sea level = Real #zsl
+  water density = Real #rhow
+  fresh water density = Real #rhofw
+End
+!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Simulation
+  Coordinate System  = Cartesian 2D 
+
+  Simulation Type = Transient
+
+  Mesh Levels = Integer 1
+
+  Timestepping Method = "bdf"
+  BDF Order = 2
+
+  Output Intervals = 2
+  Timestep Intervals =  200
+  Timestep Sizes = 0.5
+
+  Steady State Min Iterations = 1
+  Steady State Max Iterations = 1
+
+  Post File = "#NAME#.vtu"
+  vtu: Vtu Time Collection = Logical True
+
+  max output level = 3
+End
+
+!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Body 1
+  Equation = 1
+  Body Force = 1
+  Material = 1
+  Initial Condition = 1
+End
+
+!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Initial Condition 1
+
+! analytical SMB
+  SMB = Variable Coordinate 1
+    REAL procedure "USF_RAMP" "SMB"
+
+  H = Variable Coordinate 1
+    REAL procedure "USF_RAMP" "Thickness"
+
+  Zs = Variable H
+    REAL LUA "tx[0]*(1.0-rhoi/rhow)"
+
+  Zb = Variable H
+    REAL LUA "-tx[0]*rhoi/rhow"
+
+  GroundedMask = Real -1.0
+
+  bedrock = Real -1000.0
+
+End
+
+!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Body Force 1
+  Flow BodyForce 1 = Real 0.0                          
+  Flow BodyForce 2 = Real 0.0
+  Flow BodyForce 3 = Real #gravity
+
+  !Top Surface Accumulation = Equals SMB
+  Top Surface Accumulation = Variable Coordinate 1
+    REAL procedure "USF_RAMP" "SMB"
+
+  Melt = Variable time
+    REAL LUA "tx[0] < 50 and -8*math.sin(math.pi*tx[0]/50) or 0.0"
+
+  Bottom Surface Accumulation = Equals Melt
+
+End
+
+!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Material 1
+! Material properties
+  Viscosity Exponent = Real #1/n
+  Critical Shear Rate = Real 1.0e-16
+
+  SSA Mean Viscosity = Real #eta
+  SSA Mean Density = Real #rhoi
+  SSA Critical Thickness = Real #Hcr
+
+! slip coeff for the SSAx
+  SSA Friction Law = String "linear"
+  SSA Friction Parameter = Real 1.0
+  
+  Min H = Real 1.0
+End
+
+!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+!#-----------------------------------------------------------------------
+!#    Main Steady State iterations
+!#-----------------------------------------------------------------------
+Solver 1
+    Equation = "Update"
+    procedure = "ElmerIceSolvers" "UpdateExport"
+
+    Exported Variable 1 = SMB
+End
+
+Solver 2
+   Equation = "Flotation"
+   Procedure = "ElmerIceSolvers" "Flotation"
+   Variable = GroundedMask
+
+   Exported Variable 1 = Zs
+   Exported Variable 2 = Zb
+   Exported Variable 3 = bedrock
+   Exported Variable 4 = Haf
+   Exported Variable 5 = Haf0
+
+End
+
+
+Solver 3
+  Equation = "SSA"
+  Procedure = "ElmerIceSolvers" "SSABasalSolver"
+  Variable = -dofs 2 "SSAVelocity"
+
+  !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  ! Solver parameters
+  !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  Sub-Element GL parameterization = logical True
+
+
+  !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  ! numerical settings
+  !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  Linear System Solver = Iterative
+  Linear System Max Iterations = 300
+  Linear System Iterative Method = BiCGStab
+  Linear System Preconditioning = ILU2
+  Linear System Abort Not Converged = False
+  Linear System Residual Output = 1000
+  Linear System Convergence Tolerance = 1.0e-10
+
+End
+
+Solver 4
+   Equation = "Thickness"
+   Procedure = "ElmerIceSolvers" "ThicknessSolver"
+   Variable = -dofs 1 "H"
+
+  !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  ! Solver parameters
+  !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+   ! calculate dH/dt : elmerinternal routines
+   Calculate Velocity = Logical True
+
+!!  the convection velocity (mean horizontal velocity)
+   Flow Solution Name = String "SSAVelocity"
+
+   ! Stabilisation
+   Stabilization Method = Stabilized
+   Transient Stabilisation = logical true
+ 
+   ! Limits 
+    Apply Dirichlet = Logical FALSE
+    Apply Limiter = Logical FALSE
+    ! get the residual
+    Calculate Loads = Logical FALSE
+
+  !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  ! numerical settings
+  !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+   Linear System Solver = Iterative
+   Linear System Max Iterations = 1000
+   Linear System Iterative Method = BiCGStab
+   Linear System Preconditioning = ILU0
+   Linear System Abort Not Converged = False
+   Linear System Residual Output = 1000
+   Linear System Convergence Tolerance = 1.0e-12
+
+   ! equation is linear if no min/max
+   Nonlinear System Max Iterations = 10
+   Nonlinear System Convergence Tolerance  = 1.0e-09
+
+!!    
+  Steady State convergence tolerance = Real 1.0e-5
+End
+
+Solver 5
+  Equation = "SSACalving"
+  Procedure = "SSACalving" "SSACalving"
+  Critical Thickness = Real 40.0
+  Calving Thickness Mode = String "minimum"
+End
+
+
+Solver 6
+  Equation = "export1"
+  procedure = "ElmerIceSolvers" "UpdateExport"
+
+  Exported Variable 1 = -dofs 1 Melt
+  Exported Variable 2 = -elem CalvingMask
+End
+
+
+
+!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+!!######################
+Equation 1
+  Active Solvers(6) = 1 2 3 4 5 6
+End
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Boundary Condition 1
+  name = "Sides"
+  Target Boundaries(2) = 1 3
+   
+  SSAVelocity 2 = Real 0.0
+End
+
+Boundary Condition 2
+  name = "inflow"
+  Target Boundaries = 4
+
+  SSAVelocity 1 = Real #V_gl
+  SSAVelocity 2 = Real 0.0
+
+  H = Real #Hgl
+End
+
+Boundary Condition 3
+  name = "calving front"
+  Target Boundaries = 2
+  
+  Calving Front = Logical True
+End

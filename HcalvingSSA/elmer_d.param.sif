@@ -1,0 +1,31 @@
+!----------------------------------------------------------------------
+!                            PHYSICAL PARAMETERS
+!----------------------------------------------------------------------
+! the SI units are kg (kilogram) - m (meter) - s (second)
+!  Conversion to Elmer units in MPa (Megapascal) - m (meter) - d (day)
+!----------------------------------------------------------------------
+
+$yearinsec = 31536000                         ! time with calendar 365j (s)
+$dayinsec = 86400
+
+$rhoi_SI   = 910.0                            ! Ice density (kg.m^-3)
+$rhoi      = rhoi_SI / (1.0e6 * dayinsec^2)  ! Ice density (MPa.m^-2.d^2)
+
+$zsl       = 0.0                              ! Sea level elevation (m). under sea level z<0.
+
+$rhosw_SI  = 1028.0                           ! Sea water density (kg.m^-3)
+$rhow      = rhosw_SI / (1.0e6 * dayinsec^2) ! Sea water density (MPa.m^-2.d^2)
+
+$rhofw_SI  = 1000.0                           ! Sea water density (kg.m^-3)
+$rhofw     = rhofw_SI / (1.0e6 * dayinsec^2) ! Sea water density (MPa.m^-2.d^2)
+
+$grav_SI   = 9.81                             ! Gravity (m.s^-2)
+$gravity   = -grav_SI * dayinsec^2              ! Gravity (m.d^-2)
+
+!----------------------------------------------------------------------
+!                         MODEL PARAMETERS
+!---------------------------------------------------------------------
+$n         = 3.0                              ! Glen exponent (-)
+
+$Hmin      = 1.0                              ! H limiter threshold (m)
+
