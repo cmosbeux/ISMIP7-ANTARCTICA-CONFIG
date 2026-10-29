@@ -44,7 +44,7 @@ The following constants can be set in the SIF `Constants` section:
 
 - `DDF Ice`: ice degree-day factor; default `0.00879` (m water equivalent per degree-day).
 - `PDD Melt Temperature`: melt threshold in degrees Celsius; default `0.0`.
-- `Temperature Sigma`: temperature variability used to estimate expected positive degree days; default `5.0` degrees Celsius. Set to zero for a direct positive-part calculation.
+- `Temperature Sigma`: temperature variability used to estimate expected positive degree days; default `5.0` degrees Celsius. 
 - `GradTemp`: temperature lapse rate used for elevation feedback; default `-0.0065` degrees Celsius per metre.
 - `TempCorrec`: optional temperature correction; default `0.0` degrees Celsius.
 
