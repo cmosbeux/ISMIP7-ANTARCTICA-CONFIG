@@ -1,6 +1,6 @@
 # Surface mass balance for TIPMIP Antarctica
 
-Authors: Cyrille Mosbeux and Fabien Gillet-Chaulet
+Authors: Cyrille Mosbeux (based on some sources from A. Gilbert)
 
 This repository contains an Elmer/Ice surface mass-balance (SMB) solver based on monthly precipitation and positive-degree-day melt. The solver accumulates the monthly contributions and writes annual SMB after the twelfth call.
 
