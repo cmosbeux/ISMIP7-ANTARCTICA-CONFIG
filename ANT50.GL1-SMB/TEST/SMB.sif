@@ -1,0 +1,176 @@
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+include elmer.param
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Header
+  Mesh DB "." "MSH"
+End
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Constants
+   Sea Level = Real $zsl
+   Water Density = Real $rhow
+  Ice Density = Real $rhoi
+
+  ! Parameters needed by TIPMIP_SMB; the radiative path is disabled.
+  z_temp = Real 0.0
+  GradTemp = Real 0.0
+  seuil_precip = Real 0.0
+  RadFact = Real 0.0
+  Albedo_ice = Real 0.4
+  Albedo_snow = Real 0.7
+  kice = Real 0.0
+  ksnow = Real 0.0
+  k0 = Real 0.0
+  firn_param = Real 1.0
+  L_heat = Real $Lf
+  DDF Ice = Real 0.008
+  Temperature Sigma = Real 5.0
+  PDD Melt Temperature = Real 0.0
+End
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Simulation
+
+  Coordinate System  = Cartesian 2D
+  
+  Simulation Type = Transient
+  Timestepping Method = "bdf"
+  BDF Order = 1
+
+  ! Monthly forcing: 120 solver calls for 10 years.
+  Timestep Intervals = 120
+  TimeStep Sizes =  0.08333
+  Output Intervals = 12
+
+
+  Steady State Max Iterations = 1
+  Steady State Min Iterations = 1
+
+  max output level = 10
+End
+
+!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Body 1
+  Equation = 1
+  Initial Condition = 1
+  Body Force = 1
+  Material = 1
+End
+
+!#####
+Body Force 1
+
+  SMBref = Variable Coordinate 1, Coordinate 2
+    REAL LUA "0.1 + 1.9 * math.min( (tx[0]^2+tx[1]^2)^0.5 / 3.0e6, 1.0)"
+
+  ! Test temperature fields: cold reference plus a monthly sinusoidal anomaly.
+  Tref = Variable Coordinate 1, Coordinate 2, zs 
+    REAL LUA "-15-30*(math.floor(tx[2] / 250.0) * 250.0)/4000."
+
+  ! We increase temperature over time
+  Ts_anomaly = Variable zs, time
+    REAL LUA "20*tx[1]/10.0"
+
+  ! Monthly fractions sum to one per year; their seasonal amplitude ramps up.
+  Pratio = Variable Coordinate 1, Coordinate 2, time
+    REAL LUA "1 + 0.5 * tx[2]/10.0"
+End
+!#####
+Material 1
+  SSA Mean Density = Real $rhoi
+End
+!#####
+!###################################################
+!### Read h
+!###################################################
+Solver 1
+  Exec Solver = "Before Simulation"
+  Equation = Eq1
+    Procedure = "ElmerIceSolvers" "UGridDataReader"
+
+    File Name = File "MSH/restart_000.nc"
+
+    Time Index = Integer -1
+
+!# Time variable inputs
+   !# geometry
+   Variable Name 1 = File "h"
+   Variable Name 2 = File "zs"
+   Variable Name 3 = File "zb"
+   Variable Name 4 = File "haf"
+   Variable Name 5 = File "groundedmask"
+
+   !# ssa velocity
+   Variable Name 6 = File "ssavelocity 1"
+   Variable Name 7 = File "ssavelocity 2"
+
+!# Constant inputs
+   !# Nodal inputs
+   Variable Name 8  = File "bedrock"
+   Variable Name 9  = File "mueta2"
+
+!# Export Constant inputs to feed next restart
+   Exported Variable 1 = bedrock
+   Exported Variable 2 = mueta2
+   Exported Variable 3 = h
+   Exported Variable 4 = -dofs 2 "ssavelocity"
+End
+
+Solver 2
+  Exec Solver = "Before Simulation"
+  Equation = "UpdateExported 1"
+  procedure = "ElmerIceSolvers" "UpdateExport"
+  
+  Exported Variable 1 = Zsref
+  Exported Variable 2 = Zs
+
+End
+
+Solver 3
+  Equation = "UpdateExported 2"
+  procedure = "ElmerIceSolvers" "UpdateExport"
+  
+  Exported Variable 1 = -elem SMBref
+  Exported Variable 2 = -elem Ts_anomaly
+  Exported Variable 3 = -elem Tref
+  Exported Variable 4 = -elem Pratio 
+  Exported Variable 5 = "SurfGrad 1" 
+  Exported Variable 6 = "SurfGrad 2" 
+  Exported Variable 7 = -elem SMB
+End
+
+Solver 4
+  Exec Solver = After Timestep
+  Equation = String "Annual SMB"
+  Procedure = "TIPMIP_SMB_Elemental" "TransientMassBalance_SMB"
+  Variable = "SMB"
+  Variable DOFs = 1
+  Reference SMB Variable = String "SMBref"
+  Reference Temperature Variable = String "Tref"
+  Precipitation Ratio Variable = String "Pratio"
+  Temperature Anomaly Variable = String "Ts_anomaly"
+
+  Radiative Mode = Logical False
+  Elevation Feedback Mode = Logical False
+End
+
+Solver 5
+  Exec Solver = String "after saving"
+  Equation = String "ResultOutput"
+  Procedure = File "ResultOutputSolve" "ResultOutputSolver"
+  Save Geometry Ids = Logical True
+  Output File Name = File "SMB"
+  Output Format = String "vtu"
+  Output Directory = File "VTUs_Outputs"
+  Vtu Format = Logical True
+End
+
+!#####
+Equation 1
+  Active Solvers(5)= 1 2 3 4 5
+End
+
+!#####
+Boundary Condition 1
+  Target Boundaries = 1
+End
+
+
