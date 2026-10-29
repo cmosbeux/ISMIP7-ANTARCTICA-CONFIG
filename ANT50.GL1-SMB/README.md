@@ -6,7 +6,7 @@ This repository contains an Elmer/Ice surface mass-balance (SMB) solver based on
 
 ## Source code
 
-The Fortran sources are in `MY_SRC`; example Elmer input files and a test case are in `TEST`. `TIPMIP_SMB_Elemental.F90` is the location-aware implementation used by the example configuration. It supports both nodal and elemental output variables.
+The Fortran sources are in `MY_SRC`; example Elmer input files and a test case are in `TEST`. `TIPMIP_SMB_Elemental.F90` is the location-aware implementation used by the example configuration. Despide its name, it supports both nodal and elemental output variables.
 
 ## Solver usage
 
