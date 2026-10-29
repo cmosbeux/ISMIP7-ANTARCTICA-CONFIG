@@ -60,9 +60,9 @@ Set `Elevation Feedback Mode = Logical True` to adjust temperature using the dif
 
 The example is in `TEST/SMB.sif`. It reads geometry and velocity from a UGRID restart file, prepares the SMB forcing fields, runs the solver monthly, and writes VTU output. Update the file paths and ensure the mesh, restart data, and output directory referenced by the SIF are present in `TEST` before running.
 
-### Elevation feedback example
+### Video example
 
-The following animation shows the 10-year elevation-feedback test. The original AVI is retained in `TEST`; the MP4 copy is used here because it is supported by HTML5 video players.
+The following animation shows the 10-year evolution of the SMB and temperature (red areas have positive temperature and start to melt). The original AVI is retained in `TEST`; the MP4 copy is used here because it is supported by HTML5 video players.
 
 <video controls width="100%">
   <source src="TEST/SMB_elevation_feedback_10years_dummy.mp4" type="video/mp4">
