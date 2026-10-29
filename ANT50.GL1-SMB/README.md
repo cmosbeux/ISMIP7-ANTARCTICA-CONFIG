@@ -62,12 +62,12 @@ The example is in `TEST/SMB.sif`. It reads geometry and velocity from a UGRID re
 
 ### Video example
 
-The following animation shows the 10-year evolution of the SMB and temperature (red areas have positive temperature and start to melt). The original AVI is retained in `TEST`; the MP4 copy is used here because it is supported by HTML5 video players.
+The following looping GIF shows the 10-year evolution of SMB and temperature (red areas have positive temperature and start to melt)
 
-<video controls width="100%">
-  <source src="TEST/SMB_elevation_feedback_10years_dummy.mp4" type="video/mp4">
-  Your Markdown viewer does not support embedded video. [Open the MP4](TEST/SMB_elevation_feedback_10years_dummy.mp4).
-</video>
+![10-year SMB and temperature evolution](TEST/SMB_elevation_feedback_10years_dummy.gif)
+
+*Evolution of predicted SMB related to the temperature field and precipitation.*
+
 
 From the `TEST` directory, build the local solvers and run the SMB case with:
 
