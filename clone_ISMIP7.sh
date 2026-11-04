@@ -26,28 +26,62 @@ echo '╚═══════════════════════�
 
 
 # Prompt user for input
-read -p "Enter SSP (e.g., SSP126): " ssp
+while true; do
+    read -p "Enter scenario (OCX, HISTORICAL, SSP126, SSP370, SSP585, or CTRL): " ssp
+    ssp=$(echo "$ssp" | tr '[:lower:]' '[:upper:]')
+    case "$ssp" in
+        OCX|HISTORICAL|SSP126|SSP370|SSP585|CTRL)
+            break
+            ;;
+        *)
+            echo "Invalid scenario. Choose OCX, HISTORICAL, SSP126, SSP370, SSP585, or CTRL."
+            ;;
+    esac
+done
+
+
 read -p "Enter GCM (default CESM2-WACCM): " gcm
 gcm=${gcm:-CESM2-WACCM}
 read -p "Enter EXP (e.g., 004): " exp
-read -p "Enter FINAL YEAR (default is 2300): " final_year
-final_year=${final_year:-2300}
+
+read -p "Enter START YEAR (default is 2000 for HISTORICAL and 2015 for SSPs): " start_year
+if [[ -z "$start_year" ]]; then
+    if [[ "$ssp" == "HISTORICAL" ]]; then
+        start_year=2000
+    else
+        start_year=2015
+    fi
+fi
+
+read -p "Enter FINAL YEAR (default is 2014 for HISTORICAL and 2300 for SSPs): " final_year
+if [[ -z "$final_year" ]]; then
+    if [[ "$ssp" == "HISTORICAL" ]]; then
+        final_year=2014
+    else
+        final_year=2300
+    fi
+fi
+
+
+if [[ "$ssp" == "HISTORICAL" ]]; then
+    initial_ocean_year=1850
+    initial_atmo_year=1850
+else
+    initial_ocean_year=2015
+    initial_atmo_year=2015
+fi
 
 final_ocean_year=$final_year
 final_atmo_year=$final_year
 final_collapse_year=$final_year
-
-# read -p "Enter ATMO FORCING END (default is 2300): " final_atmo_year
-# final_atmo_year=${final_atmo_year:-2300}
-# read -p "Enter COLLAPSE FORCING END (default is 2300): " final_collapse_year
-# final_collapse_year=${final_collapse_year:-2300}
 
 # Prompt user for friction law
 echo "Choose a friction law:"
 echo "  1) weertman1"
 echo "  2) weertman3"
 echo "  3) coulomb_reg"
-read -p "Enter the number of the desired friction law (1-3): " friction_choice
+read -p "Enter the number of the desired friction law (1-3: default is 3): " friction_choice
+friction_choice=${friction_choice:-3}
 
 # Determine friction law and default beta_coeff
 case $friction_choice in
@@ -77,46 +111,34 @@ else
     beta_coeff=$default_beta
 fi
 
-
+# Determine initial state file
 echo "Initial State File:"
-echo "  1) restart_ant50.gl1.init_2000-2015.nc"
-echo "  2) restart_ant50.gl1.init_2000-2015_dhdt.nc"
-echo "  3) restart_ant50.gl1.init_2000-2015_CoulombReg.nc"
-echo "  4) restart_ant50.gl1.init_2000-2015_CoulombReg_beta_gradual0.1.nc"
-read -p "Enter the initial state you want (default is (4)): " init_choice
-init_choice=${init_choice:-4}
+if [[ "$ssp" == "HISTORICAL" || "$ssp" == "OCX" ]]; then
+    init_file_name="restart_ant50.gl1.init_2000-2015_CoulombReg_beta_gradual0.1.nc"
+    echo "  default: $init_file_name"
+else
+    init_file_name="ANT50.GL1-HISTORICAL_${gcm}_EXP${exp}.init.nc"
+    echo "  default: $init_file_name"
+    if [ ! -f "$init_file_name" ]; then
+        printf '\033[1;33m  /|\   Warning: Initial state file %s does not exist.\n' "$init_file_name"
+        printf ' / ! \  Please make sure the file exists before proceeding.\033[0m\n'
 
+    fi
+fi
 
-# Determine friction law and default beta_coeff
-case $init_choice in
-    1)
-        init_file_name="restart_ant50.gl1.init_2000-2015.nc"
-        ;;
-    2)
-        init_file_name="restart_ant50.gl1.init_2000-2015_dhdt.nc"
-        ;;
-    3)
-        init_file_name="restart_ant50.gl1.init_2000-2015_CoulombReg.nc"
-        ;;
-    4)
-        init_file_name="restart_ant50.gl1.init_2000-2015_CoulombReg_beta_gradual0.1.nc"
-        ;;
-    *)
-        echo "Invalid choice. Exiting."
-        return 1 2>/dev/null || exit 1
-        ;;
-esac
 
 # Melt Parameters
 read -p "OCEAN PARAMETERIZATION (default: PICO): " ocean_param
 ocean_param=${ocean_param:-PICO}
 
+# Prompt user for ocean parameterization and related melt parameters
+# default values have been optimized with ISMIP7 MIPkit
 if [[ "$ocean_param" =~ ^[Pp][Ii][Cc][Oo]$ ]]; then
     ocean_param="PICO"
-    read -p "Overturning value (default: 3.3e6): " overturning
-    overturning=${overturning:-3.3e6}
-    read -p "Heat flux value (default: 7.5e-5): " heatflux
-    heatflux=${heatflux:-7.5e-5}  
+    read -p "Overturning value (default: 3.4e6): " overturning
+    overturning=${overturning:-2.5e6}
+    read -p "Heat flux value (default: 6.5e-5): " heatflux
+    heatflux=${heatflux:-2e-5}  
 fi
 
 
@@ -151,9 +173,15 @@ sed -i "s/<EXPXXX>/EXP$exp/g" "$target_folder/config_case.txt"
 sed -i "s/<FRICTION_LAW>/$friction_law/g" "$target_folder/config_case.txt"
 sed -i "s/<BETA_COEFF>/$beta_coeff/g" "$target_folder/config_case.txt"
 sed -i "s/<INITIAL_STATE_FILE>/$init_file_name/g" "$target_folder/config_case.txt"
+
+sed -i "s/<OINITIAL_DATE>/$initial_ocean_year/g" "$target_folder/config_case.txt"
 sed -i "s/<OFINAL_DATE>/$final_ocean_year/g" "$target_folder/config_case.txt"
+
+sed -i "s/<AINITIAL_DATE>/$initial_atmo_year/g" "$target_folder/config_case.txt"
 sed -i "s/<AFINAL_DATE>/$final_atmo_year/g" "$target_folder/config_case.txt"
+
 sed -i "s/<CFINAL_DATE>/$final_collapse_year/g" "$target_folder/config_case.txt"
+
 sed -i "s/<SIMULATION_END>/$final_year/g" "$target_folder/config_case.txt"
 sed -i "s/<OVERTURNING>/$overturning/g" "$target_folder/config_case.txt"
 sed -i "s/<HEAT_FLUX>/$heatflux/g" "$target_folder/config_case.txt"
@@ -176,5 +204,3 @@ if [ "$run_simulation" != "n" ]; then
     . ./prepare_elmer.bash
 else
     echo "Simulation not executed. Exiting."
-fi
-
