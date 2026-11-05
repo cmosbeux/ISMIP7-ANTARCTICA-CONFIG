@@ -135,9 +135,9 @@ ocean_param=${ocean_param:-PICO}
 # default values have been optimized with ISMIP7 MIPkit
 if [[ "$ocean_param" =~ ^[Pp][Ii][Cc][Oo]$ ]]; then
     ocean_param="PICO"
-    read -p "Overturning value (default: 3.4e6): " overturning
+    read -p "Overturning value (default: 2.5.e6): " overturning
     overturning=${overturning:-2.5e6}
-    read -p "Heat flux value (default: 6.5e-5): " heatflux
+    read -p "Heat flux value (default: 2e-5): " heatflux
     heatflux=${heatflux:-2e-5}  
 fi
 
