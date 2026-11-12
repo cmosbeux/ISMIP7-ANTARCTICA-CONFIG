@@ -232,9 +232,9 @@ Solver 5
   Linear System Direct Method = umfpack
 
   Nonlinear System Max Iterations = 20
-  Nonlinear System Convergence Tolerance  = 1.0e-04
+  Nonlinear System Convergence Tolerance  = 1.0e-03
   Nonlinear System Newton After Iterations = 100
-  Nonlinear System Newton After Tolerance = 1.0e-04
+  Nonlinear System Newton After Tolerance = 1.0e-03
   Nonlinear System Relaxation Factor = 1.00
   Nonlinear System Abort Not Converged = Logical False
 
@@ -276,13 +276,13 @@ Solver 6
   Apply Dirichlet = Logical True
   
   ! get the residual
-  Calculate Loads = Logical True
+  !Calculate Loads = Logical True
+  Exported Variable 1 = "h residual"
 
-!!  the convection velocity (mean horizontal velocity)
+  !!  the convection velocity (mean horizontal velocity)
   Flow Solution Name = String "SSAVelocity"
 
-! secondary variables (output): averaged surface and basal mass balance
-  Compute averaged mass balances = Logical True
+  Exported Variable 1 = "h residual"
 End
 
 
