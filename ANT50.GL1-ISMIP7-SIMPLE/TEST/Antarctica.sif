@@ -37,8 +37,8 @@ Simulation
   Timestepping Method = "bdf"
   BDF Order = 2
 
-  Timestep Intervals = 10
-  TimeStep Sizes =  0.01
+  Timestep Intervals = 100
+  TimeStep Sizes =  0.025
   Output Intervals = 1
 
   Steady State Max Iterations = 1
@@ -273,7 +273,7 @@ Solver 6
 
   Stabilization Method = Stabilized
   Transient Stabilisation = Logical True
-  
+
   Apply Dirichlet = Logical True
   Exported Variable 1 = "h residual"
 
