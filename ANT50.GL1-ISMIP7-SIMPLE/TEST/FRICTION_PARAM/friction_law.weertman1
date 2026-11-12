@@ -1,0 +1,4 @@
+! Weertman 1
+    SSA Friction Law = String "linear"
+    SSA Friction Parameter = Variable beta_1, groundedmask
+       Real LUA "tx[0]"

@@ -1,0 +1,332 @@
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+include elmer.param
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Header
+  Mesh DB "." "MSH"
+End
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Constants
+  !Physical
+  Sea Level = Real $zsl
+  Water Density = Real $rhow
+  Sea Water Specific heat = Real $cpw
+  Ice density = Real $rhoi
+  Ice fusion latent heat = Real $Lf
+  Liquidus slope = Real $lambda1
+  Liquidus intercept = Real $lambda2
+  Liquidus pressure coeff = Real $lambda3
+  
+  !Pico
+  Calendar = Real $yearinday
+  Melt Factor = Real $meltfac
+  Nb Boxes = Integer $Nbox_PICO
+  Overturning Coefficient = Real $C_PICO
+  Temperature Exchange Velocity = Real $gammaT_PICO
+  Thermal Expansion Coefficient EOS = Real $alpha_PICO
+  Salinity Contraction Coefficient EOS = Real $beta_PICO
+  In Situ Density EOS = Real $rhostar_PICO
+
+  Grounded Mask Variable Name = String "GroundedMask"
+End
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Simulation
+
+  Coordinate System  = Cartesian 2D
+  
+  Simulation Type = Transient
+  Timestepping Method = "bdf"
+  BDF Order = 2
+
+  Timestep Intervals = 10
+  TimeStep Sizes =  0.01
+  Output Intervals = 1
+
+  Steady State Max Iterations = 1
+  Steady State Min Iterations = 1
+
+  max output level = 3
+End
+
+!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Body 1
+  Equation = 1
+  Initial Condition = 1
+  Body Force = 1
+  Material = 1
+End
+
+Initial Condition 1
+  !SSA Velocity 1 = Real 0.0
+  !SSA Velocity 2 = Real 0.0
+End
+
+!#####
+Body Force 1
+  Flow BodyForce 1 = Real 0.0
+  Flow BodyForce 2 = Real 0.0
+  Flow BodyForce 3 = Real $gravity
+
+
+  !---------------------------------------------
+  ! BMB body force PICO
+  !---------------------------------------------
+  ! distance GL initialisation
+  distGL = Real 0.0  ! used in Solver DistanceSolver1
+  distGL Condition = Variable GroundedMask
+    Real procedure "USF_CondDistance" "CondDistance"
+
+  ! distance IF initialisation
+  distIF = Real 0.0
+  distIF Condition = Variable FrontMask
+    Real procedure "USF_CondFront" "CondFront"
+
+  Top Surface Accumulation = Equals 0.0
+  Bottom Surface Accumulation = Equals Melt
+
+  !---------------------------------------------
+  ! Passive Conditions
+  !---------------------------------------------
+
+  H passive = Variable Basins
+    Real LUA "(tx[0] == 14) and 0 or 1"
+  H Condition Passive = Logical True
+
+  SSAVelocity Passive = Variable Basins
+    Real LUA "(tx[0] == 14) and 0 or 1"
+
+  SSAVelocity 1 = Real 0.0
+  SSAVelocity 1 Condition Passive = Logical True
+
+  SSAVelocity 2 passive = Variable Basins
+    Real LUA "(tx[0] == 14) and 0 or 1"
+
+  SSAVelocity 2 = Real 0.0
+  SSAVelocity 2 Condition Passive = Logical True
+End
+
+
+!#####
+Material 1
+ ! Material properties
+  Viscosity Exponent = Real $1.0/n
+  Critical Shear Rate = Real $Shear
+
+  SSA Mean Viscosity = Variable mueta2
+     REAL LUA "tx[0]"
+  SSA Mean Density = Real $rhoi
+  SSA Critical Thickness = Real 1.0
+
+! definition of the friction law (linear, Weertman, Coulomb or Regularized coulomb)
+  include FRICTION_PARAM/friction_law.weertman1
+
+! Min/Max thickness for thickness and collapse solver
+  Min H = Real 1.0
+  Max H = Real 10000.0
+
+End
+
+!###################################################
+
+Solver 1
+  Exec Solver = Before Simulation
+  Equation = "UGridDataReader"
+  Procedure = "ElmerIceSolvers" "UGridDataReader"
+
+  File Name = File "MSH/restart_000.nc"
+
+  Time Index = Integer -1
+
+!# Time variable inputs
+   !# geometry
+   Variable Name 1 = File "h"
+   Variable Name 2 = File "zs"
+   Variable Name 3 = File "zb"
+   Variable Name 4 = File "haf"
+   Variable Name 5 = File "groundedmask"
+
+!# Constant inputs
+   !# Nodal inputs
+   Variable Name 6 = File "bedrock"
+   Variable Name 7 = File "mueta2"
+   Variable Name 8 = File "beta_1"
+
+!# ssa velocity
+   Variable Name 9 = File "ssavelocity 1"
+   Variable Name 10 = File "ssavelocity 2"
+
+!# Export Constant inputs to feed next restart
+   Exported Variable 1 = bedrock
+   Exported Variable 2 = mueta2
+   Exported Variable 3 = beta_1
+   !Exported Variable 4 = -dofs 2 "ssavelocity"
+   !Exported Variable 5 = h
+   !Exported Variable 6 = groundedmask
+End
+
+Solver 2
+   Equation = "Flotation"
+   Procedure = "ElmerIceSolvers" "Flotation"
+
+   ! primary variable
+   Variable = GroundedMask
+
+   ! options
+   GL integration points number = Integer 20
+
+   ! secondary variables (output): surface and base altitude, heigh above flotation
+   !                               ice mask, floated and grounded fraction
+   Exported Variable 1 = zs
+   Exported Variable 2 = zb
+   Exported Variable 3 = haf
+End
+
+Solver 3
+   Exec Solver = Before Simulation
+   Equation = "point"
+   Variable = -nooutput "dumy"
+   procedure = "nearestpoint" "nearestpoint"
+
+   ! global basins
+   Variable 1 = File "basins"
+   Variable 1 data file = File ./PICO/schmidtko_initmip8km_means.nc"
+   Target Variable 1 = String "basins"
+
+   Exported Variable 1 = -dofs 1 -elem basins
+End
+
+Solver 4
+  Equation = "MELT"
+  Variable = -nooutput dummy
+  Procedure = "Melt" "MeltSolver"
+
+  data file = File "./PICO/Zhou_climatology_PICO.nc"
+  delta_T correction specified = Logical True
+  Uniform delta_T correction = Real -1.0
+
+  Bottom Surface Variable Name = String "zb"
+  Grounding Line Melt = Logical False
+  PanAntarctic = Logical True
+
+  Time Counter start = Integer -1
+
+  Parameterisation Name = string "PICO"
+  DistGL Name = string "distGL"
+  DistIF Name = string "distIF"
+
+  Exported variable 1 = -dofs 1 distGL
+  Exported variable 2 = -dofs 1 FrontMask
+  Exported variable 3 = -dofs 1 distIF
+  Exported Variable 4 = -dofs 1 -elem Boxes
+  Exported Variable 5 = -dofs 1 -elem Melt
+  Exported variable 6 = -dofs 1 -elem basins
+End
+
+Solver 5
+  Equation = "SSA"
+  Procedure = "ElmerIceSolvers" "SSABasalSolver"
+
+  ! primary variable
+  Variable = -dofs 2 "SSAVelocity"
+
+  ! numerical setting
+  Linear System Use Hypre = Logical False
+  Linear System Solver = Iterative
+  Linear System Iterative Method = "FlexGMRes"
+  Linear System Max Iterations = 1000
+  Linear System Convergence Tolerance = 1.0E-06
+  Linear System Abort Not Converged = True
+  Linear System Residual Output = 1
+  Linear System Preconditioning = "boomeramg"
+
+  Nonlinear System Max Iterations = 50
+  Nonlinear System Convergence Tolerance = 1.0e-04
+  Nonlinear System Newton After Iterations = 10
+  Nonlinear System Newton After Tolerance = 1.0e-04
+  Nonlinear System Relaxation Factor = 1.00
+  Nonlinear System Abort Not Converged = Logical False
+
+  Bulk Assembly Timing = Logical True
+  Linear System Timing = Logical True
+  Linear System Timing Cumulative = Logical True
+
+  Steady State Convergence Tolerance = 1.0e-6
+
+  ! GL subgrid element
+  Sub-Element GL parameterization = Logical True
+  GL integration points number = Integer 20
+
+  velocity norm limit = Real 1000.0
+End
+
+
+Solver 6
+  Exec Solver = Never
+  Equation = "Thickness"
+  Procedure = "ElmerIceSolvers" "ThicknessSolver"
+
+  ! primary variable
+  Variable = -dofs 1 "H"
+
+  ! calculate dH/dt : elmerinternal routines
+  Calculate Velocity = Logical True
+
+  ! numerical setting
+  Linear System Solver = Iterative
+  Linear System Iterative Method = "BiCGStab"
+  Linear System Max Iterations = 1000
+  Linear System Convergence Tolerance = 1.0E-12
+  Linear System Abort Not Converged = Logical True
+  Linear System Residual Output = 1
+  Linear System Preconditioning = "ILU0"
+  
+  ! equation is linear if no min/max
+  Nonlinear System Max Iterations = 15
+  Nonlinear System Convergence Tolerance  = 1.0e-06
+  Nonlinear System Relaxation Factor = 1.00
+
+  Bulk Assembly Timing = Logical True
+  Linear System Timing = Logical True
+  Linear System Timing Cumulative = Logical True
+
+  Steady State Convergence Tolerance = 1.0e-6
+
+  Stabilization Method = Stabilized
+  Transient Stabilisation = Logical True
+  Apply Dirichlet = Logical True
+  
+  ! get the residual
+  Calculate Loads = Logical True
+
+!!  the convection velocity (mean horizontal velocity)
+  Flow Solution Name = String "SSAVelocity"
+
+! secondary variables (output): averaged surface and basal mass balance
+  Compute averaged mass balances = Logical True
+End
+
+
+Solver 7
+  Exec Solver = String "after saving"
+  Equation = String "ResultOutput"
+  Procedure = File "ResultOutputSolve" "ResultOutputSolver"
+  Save Geometry Ids = Logical True
+  Output File Name = File "Collapse"
+  Output Format = String "vtu"
+  Output Directory = File "VTUs_Outputs"
+  Vtu Format = Logical True
+End
+
+!#####
+Equation 1
+  Active Solvers(7)= 1 2 3 4 5 6 7
+End
+
+!#####
+Boundary Condition 1
+  Name = "Ice Front"
+  Target Boundaries = 1
+
+  Calving Front = Logical True
+  Ice Front = Logical True
+End
+
