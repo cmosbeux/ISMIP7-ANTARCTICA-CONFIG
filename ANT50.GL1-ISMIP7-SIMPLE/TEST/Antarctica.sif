@@ -273,10 +273,8 @@ Solver 6
 
   Stabilization Method = Stabilized
   Transient Stabilisation = Logical True
-  Apply Dirichlet = Logical True
   
-  ! get the residual
-  !Calculate Loads = Logical True
+  Apply Dirichlet = Logical True
   Exported Variable 1 = "h residual"
 
   !!  the convection velocity (mean horizontal velocity)
