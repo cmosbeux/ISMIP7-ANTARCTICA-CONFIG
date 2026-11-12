@@ -281,8 +281,7 @@ Solver 6
 
   !!  the convection velocity (mean horizontal velocity)
   Flow Solution Name = String "SSAVelocity"
-
-  Exported Variable 1 = "h residual"
+  
 End
 
 
