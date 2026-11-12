@@ -219,7 +219,6 @@ Solver 4
   Exported Variable 4 = -dofs 1 -elem Boxes
   Exported Variable 5 = -dofs 1 -elem Melt
   Exported variable 6 = -dofs 1 -elem basins
-  Exported Variable 7 = -dofs 1 -elem ActiveZone
 End
 
 Solver 5
