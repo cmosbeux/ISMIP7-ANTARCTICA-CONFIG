@@ -89,5 +89,4 @@ Passive elements do not remove the rest of the mesh from every computation,
 and artificial regional boundaries can affect velocity. The current
 `SSAVelocity 1` and `SSAVelocity 2` prescribed values are commented out;
 choose and verify the intended passive-region and boundary conditions before
-using the regional result. The exported `ActiveZone` field is not populated by
-the passive expressions; use `basins` to visualize the selected region.
+using the regional result. 

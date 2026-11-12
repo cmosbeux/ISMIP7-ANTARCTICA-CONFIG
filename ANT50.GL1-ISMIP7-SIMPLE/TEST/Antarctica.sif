@@ -241,7 +241,7 @@ Solver 5
 End
 
 Solver 6
-  Exec Solver = Never
+  !Exec Solver = Never
   Equation = "Thickness"
   Procedure = "ElmerIceSolvers" "ThicknessSolver"
 
