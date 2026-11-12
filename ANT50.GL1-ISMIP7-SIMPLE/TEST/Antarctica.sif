@@ -94,13 +94,13 @@ Body Force 1
   SSAVelocity Passive = Variable Basins
     Real LUA "(tx[0] == 14) and 0 or 1"
 
-  SSAVelocity 1 = Real 0.0
+  !SSAVelocity 1 = Real 0.0
   SSAVelocity 1 Condition Passive = Logical True
 
   SSAVelocity 2 passive = Variable Basins
     Real LUA "(tx[0] == 14) and 0 or 1"
 
-  SSAVelocity 2 = Real 0.0
+  !SSAVelocity 2 = Real 0.0
   SSAVelocity 2 Condition Passive = Logical True
 End
 
@@ -219,45 +219,26 @@ Solver 4
   Exported Variable 4 = -dofs 1 -elem Boxes
   Exported Variable 5 = -dofs 1 -elem Melt
   Exported variable 6 = -dofs 1 -elem basins
+  Exported Variable 7 = -dofs 1 -elem ActiveZone
 End
 
 Solver 5
   Equation = "SSA"
-  Procedure = "ElmerIceSolvers" "SSABasalSolver"
-
-  ! primary variable
   Variable = -dofs 2 "SSAVelocity"
 
-  ! numerical setting
-  Linear System Use Hypre = Logical False
-  Linear System Solver = Iterative
-  Linear System Iterative Method = "FlexGMRes"
-  Linear System Max Iterations = 1000
-  Linear System Convergence Tolerance = 1.0E-06
-  Linear System Abort Not Converged = True
-  Linear System Residual Output = 1
-  Linear System Preconditioning = "boomeramg"
+  Procedure = "ElmerIceSolvers" "SSABasalSolver"
 
-  Nonlinear System Max Iterations = 50
-  Nonlinear System Convergence Tolerance = 1.0e-04
-  Nonlinear System Newton After Iterations = 10
+  Linear System Solver = Direct         
+  Linear System Direct Method = umfpack
+
+  Nonlinear System Max Iterations = 20
+  Nonlinear System Convergence Tolerance  = 1.0e-04
+  Nonlinear System Newton After Iterations = 100
   Nonlinear System Newton After Tolerance = 1.0e-04
   Nonlinear System Relaxation Factor = 1.00
   Nonlinear System Abort Not Converged = Logical False
 
-  Bulk Assembly Timing = Logical True
-  Linear System Timing = Logical True
-  Linear System Timing Cumulative = Logical True
-
-  Steady State Convergence Tolerance = 1.0e-6
-
-  ! GL subgrid element
-  Sub-Element GL parameterization = Logical True
-  GL integration points number = Integer 20
-
-  velocity norm limit = Real 1000.0
 End
-
 
 Solver 6
   Exec Solver = Never

@@ -1,63 +1,93 @@
-# Collapse mechanism for ISMIP7 Antarctica
+# Simple Antarctic configuration
 
-Authors: Cyrille Mosbeux and Fabien Gillet-Chaulet
+This directory contains a simplified Elmer/Ice Antarctic test configuration.
+It reads an existing mesh and restart, computes flotation and SSA velocity, and
+uses PICO to calculate ice-shelf basal melt. The SIF also contains a thickness
+solver and a basin-based passive region. It is a test setup, not an automated
+ISMIP7 production workflow; the source directory contains additional collapse
+utilities, but the current SIF does not activate a collapse solver.
 
-Participation in ISMIP7 requires implementing collapse mechanisms based either on a physical dependence on water content and/or stress, or on a predefined mask of regions prone to collapse established by the ISMIP7 team.
+## Files and requirements
 
-This development focuses on the numerical implementation of the second, simpler approach. It can be adapted to include other physical constraints if needed. 
+- `TEST/Antarctica.sif`: simulation, solver and boundary-condition settings.
+- `TEST/elmer.param`: physical and PICO parameters, in MPa, metres and days.
+- `TEST/FRICTION_PARAM/`: alternative SSA friction-law includes.
+- `MY_SRC/`: Fortran sources for the basin reader, PICO and other utilities.
+- `TEST/MSH/`: Elmer mesh and `restart_000.nc` initial fields.
+- `TEST/PICO/`: basin map and ocean-forcing NetCDF files.
 
-## Source code
+The test needs Elmer/Ice, `elmerf90`, a Fortran compiler and NetCDF Fortran
+and C libraries. The mesh, restart and locally prepared files must be available
+at the paths in the SIF; the existing `MSH` link may need to be changed on
+another machine. In particular, check that `elmer.param`, the test `Makefile`
+and all required source and input files are present in your checkout.
 
-The Fortran source files are available in the `MY_SRC` directory. Example test configuration files are provided in the `TEST` directory.
+The restart reader requests `h`, `zs`, `zb`, `haf`, `groundedmask`, `bedrock`,
+`mueta2`, `beta_1` and both `ssavelocity` components. The current basin
+reader requests the `basins` variable from the Schmidtko basin file, and PICO
+uses `Zhou_climatology_PICO.nc`. Paths are relative to the directory from
+which ElmerSolver is launched.
 
-Both serial and parallel implementations are available. The parallel version works in both serial and parallel runs and is preferred. The serial version was the initial attempt and is kept only for reference.
+## Run the test
 
-## Solver usage
+From `TEST/`, check the file paths in `Antarctica.sif`, then build the user
+functions and launch the solver:
 
-The solver can be called from an Elmer input file as follows:
-
-```fortran
-Solver 3
-  Exec Solver = Before Timestep
-  Equation = "CollapseAreas"
-  Variable = -dofs 1 dummy
-  Procedure = "CollapseAreas_Parallel" "CollapseAreas_Parallel"
-
-  Optimize Bandwidth = False
-
-  Fracture Variable = String "fracture_mask"
-
-  Collapse Ratio = Real 0.6
-  Shelf Lower Limit for Collapse = Real 2e7
-
-  ! Optional: update H when collapse is triggered
-  ! none | passive | minimum | factor
-  Collapse Thickness Mode = String "factor"
-  Collapse Thickness Factor = Real 0.5
-  ! Collapse Min Thickness = Real 1.0
-
-  File Name = File "output_collapse.txt"
-End
+```bash
+cd ANT50.GL1-ISMIP7-SIMPLE/TEST
+make compile
+ElmerSolver Antarctica.sif
 ```
+## Main Features of the simulation
 
-## Main features
+1. The mehs is provided but is created in a similar fashion as in the ElmerIceCourse 2026
+   with some adaptations to get a higher resolution in regions of interest
+2. We run a simulation from a initial configuration of Antarctica obtained by inversion of
+   two key parameters: `beta` (the friction coefficient) and `mu` (the effective viscosity)
+3. We then compute the floatation based on a hydrostatic equilibrium
+4. We compute the ocean
+5. We compute the SSA solution (a simplification of the Stokes equations)
+6. We update the thickness usig the calculated velocity in the SSA solver.
+7. We save the result
+8. We loop again.
 
-- `Fracture Variable`: name of the mask used to identify fracture-prone regions. This mask may be read from a file or computed by another solver based on physical constraints.
-- `Collapse Ratio`: threshold at which a shelf collapses in the simulation, based on the ratio `Prone to Fracture Area / Shelf Area`.
-- `Shelf Lower Limit for Collapse`: minimum shelf size considered for collapse. This keyword helps avoid collapsing small floating areas upstream of the main grounding line.
-- `Collapse Thickness Mode`: optional action on `H` for nodes in collapsed regions.
-  - `none`: keep `H` unchanged (default).
-  - `passive`: do not modify `H` here; only set `CollapseMask=1` on collapsed elements so a thickness solver can use it as passive condition.
-  - `minimum`: assign `H = Collapse Min Thickness` if provided, else use local `H Lower Limit` / `Min H`.
-  - `factor`: assign `H = Collapse Thickness Factor * H` (factor in `]0,1]`, e.g. `0.8` allows for a 90% thinning over 10 years).
+## SIF configuration
 
-Example to use collapse as passive condition in a thickness solver/body force:
+The solver sequence is:
 
-```fortran
-h Passive = Variable CollapseMask
-  Real MATC "tx"
-```
+1. `UGridDataReader` loads the restart before the simulation.
+2. `Flotation` computes `GroundedMask`, surface and base elevations, and
+   height above flotation.
+3. `nearestpoint` maps basin numbers from the NetCDF file to mesh elements
+   before the simulation.
+4. `Melt` computes grounding-line and front distances and PICO basal melt.
+   The current setup uses a uniform temperature correction of -1 degree C.
+5. `SSA` computes horizontal velocity using UMFPACK and the friction include
+   selected in `Material 1`.
+6. `Thickness` is configured but disabled with `Exec Solver = Never`; enable
+   it explicitly to evolve thickness.
+7. `ResultOutput` writes VTU files after saving.
 
-## Test case
+The current test uses ten 0.01-day timesteps and outputs every step. Adjust
+these settings in the `Simulation` block. The SSA block allows up to 20
+nonlinear iterations and does not abort if they fail to converge: inspect
+the solver log and convergence before interpreting results.
 
-A test case can be run over Antarctica. It requires a restart file containing the information necessary to reconstruct the mesh and the geometry of the ice sheet, including the detection of floating shelves.
+The current friction include, `friction_law.weertman1`, is linear and uses
+`beta_1`. Other includes are supplied, but may need different restart fields
+and parameters; check their requirements before switching. The boundary
+condition marks boundary 1 as the calving front and ice front.
+
+### Regional passive mask
+
+The `Body Force 1` passive expressions select basin 14 as the non-passive
+region: they return zero inside basin 14 and one elsewhere. Change the basin
+number or remove the passive settings to change the domain of the solve.
+The thickness mask has no effect while the thickness solver is disabled.
+
+Passive elements do not remove the rest of the mesh from every computation,
+and artificial regional boundaries can affect velocity. The current
+`SSAVelocity 1` and `SSAVelocity 2` prescribed values are commented out;
+choose and verify the intended passive-region and boundary conditions before
+using the regional result. The exported `ActiveZone` field is not populated by
+the passive expressions; use `basins` to visualize the selected region.
